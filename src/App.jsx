@@ -319,36 +319,46 @@ const UnboxingScreen = ({ onFinish }) => {
 };
 
 const Navbar = ({ balance, dayCount, onViewChange, currentView, level, xp, xpToNextLevel, weather, openQuests, goldenEggs, pendingRewards }) => (
-  <header className="flex justify-between items-center mb-6 bg-white/90 backdrop-blur-md p-3 rounded-2xl border-b-4 border-slate-200 shadow-xl z-50 relative transition-all">
-    <div className="flex items-center gap-2 cursor-pointer group" onClick={() => { playSound('pop'); onViewChange('PROFILE'); }}>
-       <div className="relative">
-         <div className="w-10 h-10 bg-yellow-300 rounded-full border-2 border-orange-500 flex items-center justify-center text-xl shadow-sm">👨‍🌾</div>
-         <div className="absolute -bottom-1 -right-1 bg-blue-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold border border-white">{level}</div>
-         {goldenEggs > 0 && <div className="absolute -top-2 -right-2 text-yellow-500 animate-pulse drop-shadow-md"><Sparkles size={16} fill="currentColor"/></div>}
-       </div>
-       <div>
-          <h2 className="font-black text-slate-800 text-sm leading-tight flex items-center gap-1">
-            Dia {dayCount} 
-            {weather === 'RAINY' ? <CloudRain size={14} className="text-blue-500"/> : <Sun size={14} className="text-orange-500"/>}
-          </h2>
-          <div className="w-16 h-2 bg-slate-200 rounded-full mt-1 overflow-hidden border border-slate-300 relative">
-            <div className="h-full bg-blue-500 transition-all duration-500" style={{ width: `${(xp / xpToNextLevel) * 100}%` }}></div>
-          </div>
-       </div>
+  <header className="flex flex-col md:flex-row justify-between items-center mb-6 bg-white/90 backdrop-blur-md p-3 rounded-2xl border-b-4 border-slate-200 shadow-xl z-50 relative transition-all gap-4 md:gap-0">
+    <div className="flex justify-between w-full md:w-auto items-center">
+      <div className="flex items-center gap-2 cursor-pointer group" onClick={() => { playSound('pop'); onViewChange('PROFILE'); }}>
+         <div className="relative">
+           <div className="w-10 h-10 bg-yellow-300 rounded-full border-2 border-orange-500 flex items-center justify-center text-xl shadow-sm">👨‍🌾</div>
+           <div className="absolute -bottom-1 -right-1 bg-blue-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold border border-white">{level}</div>
+           {goldenEggs > 0 && <div className="absolute -top-2 -right-2 text-yellow-500 animate-pulse drop-shadow-md"><Sparkles size={16} fill="currentColor"/></div>}
+         </div>
+         <div>
+            <h2 className="font-black text-slate-800 text-sm leading-tight flex items-center gap-1">
+              Dia {dayCount} 
+              {weather === 'RAINY' ? <CloudRain size={14} className="text-blue-500"/> : <Sun size={14} className="text-orange-500"/>}
+            </h2>
+            <div className="w-16 h-2 bg-slate-200 rounded-full mt-1 overflow-hidden border border-slate-300 relative">
+              <div className="h-full bg-blue-500 transition-all duration-500" style={{ width: `${(xp / xpToNextLevel) * 100}%` }}></div>
+            </div>
+         </div>
+      </div>
+      
+      {/* Saldo Mobile - Mostra aqui em telas pequenas para economizar espaço na barra de ícones */}
+      <div onClick={() => { playSound('pop'); onViewChange('WALLET'); }} className="md:hidden flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-md border bg-white text-slate-700 border-slate-200 cursor-pointer hover:scale-105 transition-transform">
+        <span className="text-yellow-500">💰</span> {balance}
+      </div>
     </div>
-    <div className="flex items-center gap-2">
-      <div onClick={() => { playSound('pop'); onViewChange('BANK'); }} className={`p-2 rounded-full border-b-4 active:border-b-0 active:translate-y-1 transition-all cursor-pointer shadow-sm ${currentView === 'BANK' ? 'bg-green-100 text-green-700 border-green-300' : 'bg-white text-slate-400 border-slate-200 hover:text-green-600'}`}><Landmark size={20} /></div>
-      <div onClick={() => { playSound('pop'); onViewChange('SETTINGS'); }} className={`p-2 rounded-full border-b-4 active:border-b-0 active:translate-y-1 transition-all cursor-pointer shadow-sm ${currentView === 'SETTINGS' ? 'bg-slate-200 text-slate-600 border-slate-400' : 'bg-white text-slate-400 border-slate-200 hover:text-slate-600'}`}><SettingsIcon size={20} /></div>
-      <div onClick={() => { playSound('pop'); onViewChange('WHEEL'); }} className={`p-2 rounded-full border-b-4 active:border-b-0 active:translate-y-1 transition-all cursor-pointer shadow-sm ${currentView === 'WHEEL' ? 'bg-purple-100 text-purple-600 border-purple-300' : 'bg-white text-slate-400 border-slate-200 hover:text-purple-500'}`}><Dices size={20} /></div>
-      <div onClick={() => { playSound('pop'); onViewChange('COMMUNITY'); }} className={`p-2 rounded-full border-b-4 active:border-b-0 active:translate-y-1 transition-all cursor-pointer shadow-sm ${currentView === 'COMMUNITY' ? 'bg-blue-100 text-blue-600 border-blue-300' : 'bg-white text-slate-400 border-slate-200 hover:text-blue-500'}`}><Users2 size={20} /></div>
-      <div onClick={() => { playSound('pop'); openQuests(); }} className="relative p-2 rounded-full border-b-4 bg-white text-slate-400 border-slate-200 hover:text-blue-500 cursor-pointer shadow-sm active:border-b-0 active:translate-y-1">
+
+    <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0 scrollbar-hide no-scrollbar">
+      <div onClick={() => { playSound('pop'); onViewChange('BANK'); }} className={`p-2 rounded-full border-b-4 active:border-b-0 active:translate-y-1 transition-all cursor-pointer shadow-sm shrink-0 ${currentView === 'BANK' ? 'bg-green-100 text-green-700 border-green-300' : 'bg-white text-slate-400 border-slate-200 hover:text-green-600'}`}><Landmark size={20} /></div>
+      <div onClick={() => { playSound('pop'); onViewChange('SETTINGS'); }} className={`p-2 rounded-full border-b-4 active:border-b-0 active:translate-y-1 transition-all cursor-pointer shadow-sm shrink-0 ${currentView === 'SETTINGS' ? 'bg-slate-200 text-slate-600 border-slate-400' : 'bg-white text-slate-400 border-slate-200 hover:text-slate-600'}`}><SettingsIcon size={20} /></div>
+      <div onClick={() => { playSound('pop'); onViewChange('WHEEL'); }} className={`p-2 rounded-full border-b-4 active:border-b-0 active:translate-y-1 transition-all cursor-pointer shadow-sm shrink-0 ${currentView === 'WHEEL' ? 'bg-purple-100 text-purple-600 border-purple-300' : 'bg-white text-slate-400 border-slate-200 hover:text-purple-500'}`}><Dices size={20} /></div>
+      <div onClick={() => { playSound('pop'); onViewChange('COMMUNITY'); }} className={`p-2 rounded-full border-b-4 active:border-b-0 active:translate-y-1 transition-all cursor-pointer shadow-sm shrink-0 ${currentView === 'COMMUNITY' ? 'bg-blue-100 text-blue-600 border-blue-300' : 'bg-white text-slate-400 border-slate-200 hover:text-blue-500'}`}><Users2 size={20} /></div>
+      <div onClick={() => { playSound('pop'); openQuests(); }} className="relative p-2 rounded-full border-b-4 bg-white text-slate-400 border-slate-200 hover:text-blue-500 cursor-pointer shadow-sm active:border-b-0 active:translate-y-1 shrink-0">
         <ClipboardList size={20} />
         {pendingRewards && <div className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-pulse"></div>}
       </div>
-      <div onClick={() => { playSound('pop'); onViewChange('BARN'); }} className={`p-2 rounded-full border-b-4 active:border-b-0 active:translate-y-1 transition-all cursor-pointer shadow-sm ${currentView === 'BARN' ? 'bg-orange-100 text-orange-600 border-orange-300' : 'bg-white text-slate-400 border-slate-200 hover:text-orange-500'}`}><Warehouse size={20} /></div>
-      <div onClick={() => { playSound('pop'); onViewChange('STORE'); }} className={`flex items-center gap-1 px-3 py-1.5 rounded-full border-b-4 active:border-b-0 active:translate-y-1 transition-all cursor-pointer shadow-sm ${currentView === 'STORE' ? 'bg-yellow-100 text-yellow-700 border-yellow-400' : 'bg-yellow-400 text-yellow-900 border-yellow-600'}`}><ShoppingBag size={16} /><span className="font-black text-sm hidden sm:inline">LOJA</span></div>
-      <div className="h-8 w-[2px] bg-slate-300 mx-1"></div>
-      <div onClick={() => { playSound('pop'); onViewChange('WALLET'); }} className="flex flex-col items-end gap-0.5 cursor-pointer hover:scale-105 transition-transform"><div className="flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-md border min-w-[80px] justify-end bg-white text-slate-700 border-slate-200"><span className="text-yellow-500">💰</span> {balance}</div></div>
+      <div onClick={() => { playSound('pop'); onViewChange('BARN'); }} className={`p-2 rounded-full border-b-4 active:border-b-0 active:translate-y-1 transition-all cursor-pointer shadow-sm shrink-0 ${currentView === 'BARN' ? 'bg-orange-100 text-orange-600 border-orange-300' : 'bg-white text-slate-400 border-slate-200 hover:text-orange-500'}`}><Warehouse size={20} /></div>
+      <div onClick={() => { playSound('pop'); onViewChange('STORE'); }} className={`flex items-center gap-1 px-3 py-1.5 rounded-full border-b-4 active:border-b-0 active:translate-y-1 transition-all cursor-pointer shadow-sm shrink-0 ${currentView === 'STORE' ? 'bg-yellow-100 text-yellow-700 border-yellow-400' : 'bg-yellow-400 text-yellow-900 border-yellow-600'}`}><ShoppingBag size={16} /><span className="font-black text-sm hidden sm:inline">LOJA</span></div>
+      
+      {/* Saldo Desktop - Mantém aqui em telas grandes */}
+      <div className="h-8 w-[2px] bg-slate-300 mx-1 hidden md:block"></div>
+      <div onClick={() => { playSound('pop'); onViewChange('WALLET'); }} className="hidden md:flex flex-col items-end gap-0.5 cursor-pointer hover:scale-105 transition-transform"><div className="flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-md border min-w-[80px] justify-end bg-white text-slate-700 border-slate-200"><span className="text-yellow-500">💰</span> {balance}</div></div>
     </div>
   </header>
 );
@@ -370,7 +380,7 @@ const BarnScreen = ({ onBack, inventory, onSellEggs, addFloatingText, marketPric
   const totalEggs = inventory.eggs_common + inventory.eggs_rare + inventory.eggs_legendary;
 
   return (
-    <div className="animate-in slide-in-from-right-10 fade-in duration-300">
+    <div className="animate-in slide-in-from-right-10 fade-in pb-20 md:pb-0">
       <div className="flex items-center gap-2 mb-4"><button onClick={onBack} className="bg-white p-2 rounded-full shadow-md"><X size={24}/></button><h1 className="text-2xl font-black text-slate-800 bg-white/50 px-3 py-1 rounded-xl">Celeiro</h1></div>
       {marketNews && (<div className={`mb-4 border px-4 py-3 rounded-xl flex items-center gap-3 ${marketNews.multiplier >= 1 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}><div className="text-2xl">{marketNews.icon}</div><div className="flex-1"><h4 className={`font-black text-sm ${marketNews.color}`}>{marketNews.title}</h4><p className="text-xs text-slate-600">{marketNews.desc}</p></div></div>)}
       <div className="flex flex-col gap-2 mb-4">
@@ -441,7 +451,31 @@ const BankScreen = ({ onBack, balance, setBalance, bankBalance, setBankBalance }
 };
 
 const RankingScreen = ({ onBack, balance }) => (
-  <div className="animate-in slide-in-from-right-10 fade-in"><div className="flex items-center gap-2 mb-4"><button onClick={onBack} className="bg-white p-2 rounded-full shadow-md"><X size={24}/></button><h1 className="text-2xl font-black text-slate-800 bg-white/50 px-3 py-1 rounded-xl">Ranking</h1></div><div className="bg-white/90 p-6 rounded-3xl border-b-4 border-slate-200 shadow-xl space-y-4">{LEADERBOARD_MOCK.map((p,i)=>(<div key={p.id} className="flex justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100"><div className="flex gap-4"><span className="font-black text-slate-400">{i+1}</span> <span>{p.avatar} {p.name}</span></div><span className="font-black text-green-600">{p.coins}</span></div>))}<div className="h-px bg-slate-200 my-2"></div><div className="flex justify-between p-4 bg-blue-50 rounded-2xl border-2 border-blue-200"><div className="flex gap-4"><span className="font-black text-blue-600">99+</span> <span>👨‍🌾 Você</span></div><span className="font-black text-blue-700">{balance}</span></div></div></div>
+  <div className="animate-in slide-in-from-right-10 fade-in pb-20 md:pb-0">
+    <div className="flex items-center gap-2 mb-4">
+      <button onClick={onBack} className="bg-white p-2 rounded-full shadow-md"><X size={24}/></button>
+      <h1 className="text-xl md:text-2xl font-black text-slate-800 bg-white/50 px-3 py-1 rounded-xl">Ranking</h1>
+    </div>
+    <div className="bg-white/90 p-4 md:p-6 rounded-3xl border-b-4 border-slate-200 shadow-xl space-y-3 md:space-y-4">
+      {LEADERBOARD_MOCK.map((p,i)=>(
+        <div key={p.id} className="flex justify-between p-3 md:p-4 bg-slate-50 rounded-2xl border border-slate-100 text-sm md:text-base">
+          <div className="flex gap-2 md:gap-4 items-center">
+            <span className="font-black text-slate-400 min-w-[1.5rem]">{i+1}</span> 
+            <span className="truncate max-w-[120px] md:max-w-none">{p.avatar} {p.name}</span>
+          </div>
+          <span className="font-black text-green-600 whitespace-nowrap">{p.coins}</span>
+        </div>
+      ))}
+      <div className="h-px bg-slate-200 my-2"></div>
+      <div className="flex justify-between p-3 md:p-4 bg-blue-50 rounded-2xl border-2 border-blue-200 text-sm md:text-base">
+        <div className="flex gap-2 md:gap-4 items-center">
+          <span className="font-black text-blue-600 min-w-[1.5rem]">99+</span> 
+          <span>👨‍🌾 Você</span>
+        </div>
+        <span className="font-black text-blue-700 whitespace-nowrap">{balance}</span>
+      </div>
+    </div>
+  </div>
 );
 
 const SettingsScreen = ({ onBack, onReset, dayCount, isMuted, toggleMute, onPrestige, canPrestige, goldenEggsToGain, onExportSave, onImportSave }) => (
@@ -673,10 +707,10 @@ const WheelScreen = ({ onBack, onSpin, canSpin, balance }) => {
   return (
     <div className="animate-in slide-in-from-bottom-10 fade-in duration-300 flex flex-col items-center">
       <div className="w-full flex items-center gap-2 mb-4"><button onClick={onBack} className="bg-white p-2 rounded-full shadow-md"><X size={24}/></button><h1 className="text-2xl font-black text-slate-800 bg-white/50 px-3 py-1 rounded-xl">Roleta Diária</h1></div>
-      <div className="bg-white/90 backdrop-blur-sm p-8 rounded-3xl border-b-8 border-purple-300 shadow-2xl flex flex-col items-center">
+      <div className="bg-white/90 backdrop-blur-sm p-6 md:p-8 rounded-3xl border-b-8 border-purple-300 shadow-2xl flex flex-col items-center w-full max-w-sm">
         <div className="relative mb-8">
            <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-20 text-red-500 text-4xl drop-shadow-md">▼</div>
-           <div className="w-64 h-64 rounded-full border-[8px] border-white shadow-xl overflow-hidden relative transition-transform duration-[4000ms] cubic-bezier(0.1, 0.7, 1.0, 0.1)" style={{ background: 'conic-gradient(#fbbf24 0deg 45deg, #3b82f6 45deg 90deg, #fbbf24 90deg 135deg, #94a3b8 135deg 180deg, #fbbf24 180deg 225deg, #ef4444 225deg 270deg, #8b5cf6 270deg 315deg, #f97316 315deg 360deg)', transform: `rotate(${rotation}deg)` }}></div>
+           <div className="w-56 h-56 md:w-64 md:h-64 rounded-full border-[8px] border-white shadow-xl overflow-hidden relative transition-transform duration-[4000ms] cubic-bezier(0.1, 0.7, 1.0, 0.1)" style={{ background: 'conic-gradient(#fbbf24 0deg 45deg, #3b82f6 45deg 90deg, #fbbf24 90deg 135deg, #94a3b8 135deg 180deg, #fbbf24 180deg 225deg, #ef4444 225deg 270deg, #8b5cf6 270deg 315deg, #f97316 315deg 360deg)', transform: `rotate(${rotation}deg)` }}></div>
            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-white rounded-full shadow-lg flex items-center justify-center border-4 border-slate-200 z-10 font-black text-purple-600"><HelpCircle size={32} className="text-purple-500" /></div>
         </div>
         <h3 className="text-xl font-black text-slate-700 mb-2">Tente a sorte!</h3>
