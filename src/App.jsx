@@ -11,7 +11,7 @@ import {
 } from './data/gameConfig';
 
 // Utilitários
-import { playSound, setGlobalMute, initAudio } from './utils/audioSystem';
+import { playSound, setGlobalMute, initAudio, attachAudioUnlockListeners } from './utils/audioSystem';
 
 // Componentes UI
 import FoxComponent from './components/ui/Fox';
@@ -43,6 +43,7 @@ import WheelScreen from './components/screens/WheelScreen';
 import ProfileScreen from './components/screens/ProfileScreen';
 import WalletScreen from './components/screens/WalletScreen';
 import ChickenChaseScreen from './components/screens/ChickenChaseScreen';
+import CockfightScreen from './components/screens/CockfightScreen';
 
 // --- APP PRINCIPAL ---
 export default function App() {
@@ -102,22 +103,11 @@ export default function App() {
     return s ? JSON.parse(s) : ACHIEVEMENTS_LIST;
   });
 
-  // ENGENHARIA: Unlock Audio on iOS (Primeira Interação)
+  // ENGENHARIA: Desbloqueio confiável de áudio no iOS (primeira interação)
   useEffect(() => {
-    const unlockAudio = () => {
-      console.log("Interação detectada, desbloqueando áudio...");
-      initAudio();
-      // Não removemos imediatamente para garantir que múltiplas interações possam tentar desbloquear se a primeira falhar
-      // Mas removemos após sucesso ou algumas tentativas
-    };
-    window.addEventListener('click', unlockAudio);
-    window.addEventListener('touchstart', unlockAudio);
-    window.addEventListener('touchend', unlockAudio);
-    return () => {
-      window.removeEventListener('click', unlockAudio);
-      window.removeEventListener('touchstart', unlockAudio);
-      window.removeEventListener('touchend', unlockAudio);
-    };
+    attachAudioUnlockListeners();
+    // Garantir contexto criado também em navegadores não iOS
+    initAudio();
   }, []);
   
   // ENGENHARIA: Novos Estados para os recursos implementados
@@ -781,6 +771,8 @@ export default function App() {
               <BankScreen onBack={() => setView('COOP')} balance={balance} setBalance={setBalance} bankBalance={bankBalance} setBankBalance={setBankBalance} />
             ) : view === 'CHASE' ? (
               <ChickenChaseScreen onBack={() => setView('COOP')} balance={balance} setBalance={setBalance} showToast={showToast} />
+            ) : view === 'RINHA' ? (
+              <CockfightScreen onBack={() => setView('COOP')} balance={balance} setBalance={setBalance} showToast={showToast} />
             ) : (
               <WalletScreen onBack={() => setView('COOP')} balance={balance} setBalance={setBalance} showToast={showToast} addFloatingText={addFloatingText} />
             )}
