@@ -60,7 +60,13 @@ export default function App() {
     const s = localStorage.getItem('farm_chickens'); 
     if (s) {
       const parsed = JSON.parse(s);
-      return parsed.map(c => ({...c, last_collected_day: c.last_collected_day || 0}));
+      return parsed.map(c => {
+        // Correção Retroativa: Starter deve ser imune
+        if (c.is_starter || c.name === "Meu Pintinho" || c.id === 1) {
+           return { ...c, last_collected_day: c.last_collected_day || 0, is_starter: true, immune: true, is_sick: false };
+        }
+        return { ...c, last_collected_day: c.last_collected_day || 0 };
+      });
     }
     return []; 
   });
@@ -709,7 +715,7 @@ export default function App() {
       {session === 'GAME' && fox && <FoxComponent x={fox.x} y={fox.y} onClick={handleFoxClick} />}
 
       {session === 'AUTH' && <AuthScreen onLogin={() => setSession('UNBOXING')} />}
-      {session === 'UNBOXING' && <UnboxingScreen onFinish={() => {setChickens([{ id: 1, type: "GRANJA", name: "Meu Pintinho", age_days: 0, last_fed_day: 1, is_sick: false, has_poop: false, last_collected_day: 0, is_starter: true }]); setBalance(50); setInventory(prev=>({...prev, feed:5})); generateDailyQuests(); setSession('GAME');}} />}
+      {session === 'UNBOXING' && <UnboxingScreen onFinish={() => {setChickens([{ id: 1, type: "GRANJA", name: "Meu Pintinho", age_days: 0, last_fed_day: 1, is_sick: false, has_poop: false, last_collected_day: 0, is_starter: true, immune: true }]); setBalance(50); setInventory(prev=>({...prev, feed:5})); generateDailyQuests(); setSession('GAME');}} />}
       
       {session === 'GAME' && (
         <div className="relative z-10 h-screen overflow-y-auto">
