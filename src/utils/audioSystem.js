@@ -8,15 +8,48 @@ export const setGlobalMute = (isMuted) => {
 
 let audioCtx = null;
 
-const getAudioContext = () => {
+export const initAudio = () => {
   if (!audioCtx) {
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     if (AudioContext) {
       audioCtx = new AudioContext();
     }
   }
-  if (audioCtx && audioCtx.state === 'suspended') {
-    audioCtx.resume();
+  
+  if (audioCtx) {
+    // No iOS, o resume deve ser chamado explicitamente em um evento de clique
+    if (audioCtx.state === 'suspended' || audioCtx.state === 'interrupted') {
+      audioCtx.resume().then(() => {
+        console.log("AudioContext resumed successfully");
+        warmUp(audioCtx);
+      }).catch(e => console.error("Audio resume failed", e));
+    } else {
+      warmUp(audioCtx);
+    }
+  }
+  return audioCtx;
+};
+
+const warmUp = (ctx) => {
+  try {
+    const buffer = ctx.createBuffer(1, 1, 22050);
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(ctx.destination);
+    source.start(0);
+    source.onended = () => source.disconnect();
+  } catch (e) {
+    console.error("Audio warm-up failed", e);
+  }
+};
+
+const getAudioContext = () => {
+  if (!audioCtx) {
+     return initAudio();
+  }
+  // Tentar resume agressivo se estiver suspenso (comum no iOS após inatividade)
+  if (audioCtx && (audioCtx.state === 'suspended' || audioCtx.state === 'interrupted')) {
+    audioCtx.resume().catch(() => {});
   }
   return audioCtx;
 };
