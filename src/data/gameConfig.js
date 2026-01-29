@@ -35,7 +35,17 @@ export const MINIGAME_CONFIG = {
   SOLO_REWARD_MULTIPLIER: 1.5, // 50% profit
   SOLO_ATTEMPTS: 6,
   PVP_BURN_FEE: 0.20, // 20% burned from loser's bet
-  DOOR_COUNT: 12
+  DOOR_COUNT: 12,
+  HARVEST: {
+    PASSIVES: {
+      GRANJA: { label: 'Resistência', icon: '🛡️', desc: 'Imune a 1 Ovo Podre', bonus: 'SHIELD_ONCE' },
+      CAIPIRA: { label: 'Instinto', icon: '🔍', desc: 'Detecta itens próximos', bonus: 'VISION' },
+      GIGANTE: { label: 'Peso Pesado', icon: '💪', desc: 'Empurra oponente 2x mais longe', bonus: 'PUSH_FORCE' },
+      HIBRIDA: { label: 'Velocidade', icon: '⚡', desc: 'Velocidade base +10%', bonus: 'SPEED_BASE', value: 0.1 },
+      MUTANTE: { label: 'Teletransporte', icon: '🌌', desc: 'Atravessa bordas do mapa', bonus: 'TELEPORT' },
+      CYBER: { label: 'Overclock', icon: '🤖', desc: 'Power-ups duram 50% mais', bonus: 'BUFF_EXTEND', value: 0.5 }
+    }
+  }
 };
 
 export const RINHA_CONFIG = {
@@ -105,11 +115,16 @@ export const AUCTION_MOCK_INITIAL = [
 ];
 
 export const LEADERBOARD_MOCK = [
-  { id: 'top1', name: 'ReiDoOvo', coins: 950000, avatar: '👑' },
-  { id: 'top2', name: 'FazendaX', coins: 540000, avatar: '🚜' },
-  { id: 'top3', name: 'CryptoChicken', coins: 210000, avatar: '🚀' },
-  { id: 'top4', name: 'MariaFarm', coins: 150000, avatar: '👩‍🌾' },
-  { id: 'top5', name: 'João33', coins: 88000, avatar: '🤠' },
+  { id: 'p1', name: 'ReiDoOvo', avatar: '👑', coins: 50000, harvestRating: 2100 },
+  { id: 'p2', name: 'CryptoFarmer', avatar: '�', coins: 42000, harvestRating: 1950 },
+  { id: 'p3', name: 'FazendeiroTop', avatar: '👨‍🌾', coins: 38000, harvestRating: 1800 },
+  { id: 'p4', name: 'NoobMaster', avatar: '�', coins: 25000, harvestRating: 1700 },
+  { id: 'p5', name: 'RichDuck', avatar: '🦆', coins: 150000, harvestRating: 1650 },
+  { id: 'p6', name: 'LuckyHen', avatar: '�', coins: 12000, harvestRating: 1600 },
+  { id: 'p7', name: 'EggHunter', avatar: '🏹', coins: 8000, harvestRating: 1550 },
+  { id: 'p8', name: 'CluckCluck', avatar: '�', coins: 7500, harvestRating: 1500 },
+  { id: 'p9', name: 'FarmerJohn', avatar: '🚜', coins: 6800, harvestRating: 1450 },
+  { id: 'p10', name: 'ZenChicken', avatar: '�', coins: 5000, harvestRating: 1400 },
 ];
 
 export const REFERRAL_LEVELS = [

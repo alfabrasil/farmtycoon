@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  ArrowUpCircle, Lock, Moon, Gamepad2, Dna
+  ArrowUpCircle, Lock, Moon, Gamepad2, Dna, Zap
 } from 'lucide-react';
 
 // Dados e Configuração
@@ -44,6 +44,7 @@ import ProfileScreen from './components/screens/ProfileScreen';
 import WalletScreen from './components/screens/WalletScreen';
 import ChickenChaseScreen from './components/screens/ChickenChaseScreen';
 import CockfightScreen from './components/screens/CockfightScreen';
+import HarvestGameScreen from './components/screens/harvest/HarvestGameScreen';
 
 // --- APP PRINCIPAL ---
 export default function App() {
@@ -733,6 +734,9 @@ export default function App() {
                      <Gamepad2 size={32} fill="currentColor" className="group-hover:rotate-12 transition-transform"/>
                      <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full border-2 border-white animate-pulse">NOVO</span>
                    </button>
+                   <button onClick={() => setView('HARVEST')} className="bg-green-600 hover:bg-green-700 text-white w-14 h-14 md:w-16 md:h-16 rounded-full shadow-2xl flex items-center justify-center border-4 border-green-400 animate-in zoom-in group relative">
+                     <Zap size={32} fill="currentColor" className="group-hover:scale-110 transition-transform"/>
+                   </button>
                    {upgrades.LAB && (
                      <button onClick={() => setView('LAB')} className="bg-pink-500 hover:bg-pink-600 text-white w-14 h-14 md:w-16 md:h-16 rounded-full shadow-2xl flex items-center justify-center border-4 border-pink-400 animate-in zoom-in">
                        <Dna size={32} fill="currentColor" className="animate-pulse"/>
@@ -779,6 +783,8 @@ export default function App() {
               <ChickenChaseScreen onBack={() => setView('COOP')} balance={balance} setBalance={setBalance} showToast={showToast} />
             ) : view === 'RINHA' ? (
               <CockfightScreen onBack={() => setView('COOP')} balance={balance} setBalance={setBalance} showToast={showToast} />
+            ) : view === 'HARVEST' ? (
+              <HarvestGameScreen onBack={() => setView('COOP')} balance={balance} setBalance={setBalance} showToast={showToast} chickens={chickens} />
             ) : (
               <WalletScreen onBack={() => setView('COOP')} balance={balance} setBalance={setBalance} showToast={showToast} addFloatingText={addFloatingText} />
             )}
