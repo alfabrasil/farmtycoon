@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Trophy, History, Play, Info, Coins, Zap, Shield, Skull, ChevronLeft } from 'lucide-react';
 import { playSound } from '../../../utils/audioSystem';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 // Componentes Internos
 import HarvestLobby from './HarvestLobby';
@@ -11,6 +12,7 @@ import HarvestHistory from './HarvestHistory';
 import HarvestTreasury from './HarvestTreasury';
 
 const HarvestGameScreen = ({ onBack, balance, setBalance, showToast, chickens }) => {
+  const { t } = useLanguage();
   const [gameState, setGameState] = useState('LOBBY'); // LOBBY, SETUP, PLAYING, RESULT, HISTORY, TREASURY
   const [gameConfig, setGameConfig] = useState({
     bet: 10,
@@ -26,8 +28,12 @@ const HarvestGameScreen = ({ onBack, balance, setBalance, showToast, chickens })
 
   // ENGENHARIA: Persistência de Histórico
   const [history, setHistory] = useState(() => {
-    const s = localStorage.getItem('farm_harvest_history');
-    return s ? JSON.parse(s) : [];
+    try {
+      const s = localStorage.getItem('farm_harvest_history');
+      return s ? JSON.parse(s) : [];
+    } catch (e) {
+      return [];
+    }
   });
 
   useEffect(() => {
@@ -36,7 +42,7 @@ const HarvestGameScreen = ({ onBack, balance, setBalance, showToast, chickens })
 
   const handleStartGame = (config) => {
     if (balance < config.bet) {
-      showToast("Saldo insuficiente!", 'error');
+      showToast(t('msg_insufficient_funds'), 'error');
       return;
     }
 
@@ -67,7 +73,7 @@ const HarvestGameScreen = ({ onBack, balance, setBalance, showToast, chickens })
           localStorage.setItem('farm_harvest_weekly_points', newPoints);
           return newPoints;
         });
-        showToast(`+${pointsGained} Pontos de Ranking!`, 'info');
+        showToast(t('harvest_ranking_points', [pointsGained]), 'info');
       }
       setBalance(prev => prev + prize);
       playSound('success');
@@ -107,11 +113,11 @@ const HarvestGameScreen = ({ onBack, balance, setBalance, showToast, chickens })
             <ChevronLeft size={24} />
           </button>
           <div>
-            <h1 className="text-white font-black text-lg md:text-xl flex items-center gap-2 leading-none">
+            <h1 className="text-white font-black text-lg md:text-xl flex items-center gap-2 leading-none uppercase">
               <Zap className="text-yellow-300 fill-yellow-300" size={20} />
-              COLHEITA COMPETITIVA
+              {t('harvest_lobby_title')}
             </h1>
-            <p className="text-green-100 text-[10px] font-bold tracking-widest uppercase">Arena PvP PvP</p>
+            <p className="text-green-100 text-[10px] font-bold tracking-widest uppercase">{t('harvest_arena_pvp')}</p>
           </div>
         </div>
 

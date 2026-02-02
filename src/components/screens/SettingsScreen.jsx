@@ -67,10 +67,10 @@ const SettingsScreen = ({ onBack, onReset, dayCount, isMuted, toggleMute, onPres
         {/* Prestige */}
         <div className="p-4 bg-gradient-to-br from-yellow-100 to-amber-100 rounded-2xl border-2 border-yellow-300">
           <h3 className="font-black text-yellow-800 flex items-center gap-2">
-            <Crown size={20}/> Ascensão (Rebirth)
+            <Crown size={20}/> {t('settings_prestige_title')}
           </h3>
           <p className="text-xs text-yellow-700 mb-3">
-            Venda sua fazenda para ganhar Ovos Dourados e bônus permanentes.
+            {t('settings_prestige_desc')}
           </p>
           <button 
             disabled={!canPrestige}
@@ -81,7 +81,7 @@ const SettingsScreen = ({ onBack, onReset, dayCount, isMuted, toggleMute, onPres
                 : 'bg-slate-200 border-slate-300 text-slate-400 grayscale'
             }`}
           >
-            ASCENDER (+{goldenEggsToGain} 🥚)
+            {t('settings_prestige_btn', [goldenEggsToGain])}
           </button>
         </div>
 

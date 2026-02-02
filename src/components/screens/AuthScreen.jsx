@@ -11,7 +11,7 @@ const AuthScreen = ({ onLogin }) => {
   const handleRegister = (e) => { 
     e.preventDefault(); 
     setLoading(true); 
-    setTimeout(() => onLogin(), 1500); 
+    setTimeout(() => onLogin('USER'), 1500); 
   };
 
   return (

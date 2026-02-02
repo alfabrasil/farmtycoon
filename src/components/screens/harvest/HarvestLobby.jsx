@@ -1,7 +1,9 @@
 import React from 'react';
 import { Play, History, Info, Trophy, Users2, Bot, Landmark, Coins } from 'lucide-react';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 const HarvestLobby = ({ onStart, onViewHistory, onViewTreasury, history = [] }) => {
+  const { t } = useLanguage();
   const stats = (Array.isArray(history) ? history : []).reduce((acc, curr) => {
     if (curr.result === 'VITORIA') acc.wins++;
     acc.total++;
@@ -22,17 +24,16 @@ const HarvestLobby = ({ onStart, onViewHistory, onViewTreasury, history = [] }) 
               🌽
             </div>
             <div>
-              <h2 className="text-2xl font-black text-slate-800 leading-tight">Colheita Competitiva</h2>
+              <h2 className="text-2xl font-black text-slate-800 leading-tight">{t('harvest_lobby_title')}</h2>
               <div className="flex gap-2 mt-1">
-                <span className="bg-green-100 text-green-700 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">Multiplayer PvP</span>
-                <span className="bg-amber-100 text-amber-700 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">180% Prize</span>
+                <span className="bg-green-100 text-green-700 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">{t('harvest_multiplayer_pvp')}</span>
+                <span className="bg-amber-100 text-amber-700 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">{t('harvest_prize_percentage', [180])}</span>
               </div>
             </div>
           </div>
 
           <p className="text-slate-500 text-sm font-medium mb-8 leading-relaxed">
-            Corra pelo campo 6x6, colete milhos e ovos dourados, e empurre seu oponente para fora do caminho! 
-            O jogador com mais pontos após 120 segundos leva a bolada.
+            {t('harvest_lobby_desc')}
           </p>
 
           <button 
@@ -43,7 +44,7 @@ const HarvestLobby = ({ onStart, onViewHistory, onViewTreasury, history = [] }) 
             className="w-full bg-green-500 hover:bg-green-600 text-white py-4 rounded-2xl font-black text-lg shadow-lg shadow-green-200 border-b-4 border-green-700 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-3 group"
           >
             <Play className="fill-white group-hover:scale-110 transition-transform" />
-            JOGAR AGORA
+            {t('harvest_btn_play')}
           </button>
         </div>
       </div>
@@ -53,7 +54,7 @@ const HarvestLobby = ({ onStart, onViewHistory, onViewTreasury, history = [] }) 
         <div className="bg-white p-4 rounded-3xl shadow-md border border-slate-100">
           <div className="flex items-center gap-2 mb-2 text-slate-400">
             <Trophy size={16} />
-            <span className="text-[10px] font-black uppercase tracking-widest">Taxa de Vitória</span>
+            <span className="text-[10px] font-black uppercase tracking-widest">{t('harvest_win_rate')}</span>
           </div>
           <div className="text-2xl font-black text-slate-800">{winRate}%</div>
           <div className="w-full h-1.5 bg-slate-100 rounded-full mt-2 overflow-hidden">
@@ -67,12 +68,12 @@ const HarvestLobby = ({ onStart, onViewHistory, onViewTreasury, history = [] }) 
         <div className="bg-white p-4 rounded-3xl shadow-md border border-slate-100">
           <div className="flex items-center gap-2 mb-2 text-slate-400">
             <Coins size={16} />
-            <span className="text-[10px] font-black uppercase tracking-widest">Lucro Total</span>
+            <span className="text-[10px] font-black uppercase tracking-widest">{t('harvest_total_profit')}</span>
           </div>
           <div className={`text-2xl font-black ${stats.profit >= 0 ? 'text-green-600' : 'text-red-500'}`}>
             {stats.profit >= 0 ? '+' : ''}{stats.profit}
           </div>
-          <div className="text-[10px] font-bold text-slate-400 mt-2 uppercase">Moedas Acumuladas</div>
+          <div className="text-[10px] font-bold text-slate-400 mt-2 uppercase">{t('harvest_acc_coins')}</div>
         </div>
       </div>
 
@@ -87,8 +88,8 @@ const HarvestLobby = ({ onStart, onViewHistory, onViewTreasury, history = [] }) 
               <Landmark size={20} />
             </div>
             <div className="text-left">
-              <div className="font-black text-white text-sm">Tesouraria da Comunidade</div>
-              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">Transparência das taxas coletadas</div>
+              <div className="font-black text-white text-sm">{t('harvest_treasury_title')}</div>
+              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">{t('harvest_treasury_desc')}</div>
             </div>
           </div>
           <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-500 group-hover:translate-x-1 transition-transform">
@@ -105,8 +106,8 @@ const HarvestLobby = ({ onStart, onViewHistory, onViewTreasury, history = [] }) 
               <History size={20} />
             </div>
             <div className="text-left">
-              <div className="font-black text-slate-800 text-sm">Histórico de Partidas</div>
-              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Últimos 50 jogos realizados</div>
+              <div className="font-black text-slate-800 text-sm">{t('harvest_history_title')}</div>
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{t('harvest_history_desc')}</div>
             </div>
           </div>
           <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 group-hover:translate-x-1 transition-transform">
@@ -117,9 +118,9 @@ const HarvestLobby = ({ onStart, onViewHistory, onViewTreasury, history = [] }) 
         <div className="bg-amber-50 border border-amber-200 p-4 rounded-2xl flex gap-3">
           <Info className="text-amber-500 shrink-0" size={20} />
           <div>
-            <div className="font-black text-amber-800 text-[10px] uppercase tracking-wider mb-1">Como Funciona o PvP</div>
+            <div className="font-black text-amber-800 text-[10px] uppercase tracking-wider mb-1">{t('harvest_how_pvp')}</div>
             <p className="text-amber-700 text-xs font-medium leading-relaxed">
-              O sistema retém 10% de cada aposta para taxas. O vencedor recebe 180% do valor que apostou (Pote total - taxas).
+              {t('harvest_how_pvp_desc')}
             </p>
           </div>
         </div>

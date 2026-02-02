@@ -30,8 +30,8 @@ const Navbar = ({ balance, dayCount, onViewChange, currentView, level, xp, xpToN
         </div>
         
         <div className="flex gap-1 ml-4 md:hidden">
-          {automations?.NUTRIBOT?.active && <div className="text-lg animate-bounce" title="NutriBot Ativo">🤖</div>}
-          {automations?.CLEANSWEEP?.active && <div className="text-lg animate-bounce delay-100" title="CleanSweep Ativo">🧹</div>}
+          {automations?.NUTRIBOT?.active && <div className="text-lg animate-bounce" title={t('tech_NUTRIBOT_name')}>🤖</div>}
+          {automations?.CLEANSWEEP?.active && <div className="text-lg animate-bounce delay-100" title={t('tech_CLEANSWEEP_name')}>🧹</div>}
         </div>
 
         <div onClick={() => { playSound('pop'); onViewChange('WALLET'); }} className="md:hidden flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-md border bg-white text-slate-700 border-slate-200 cursor-pointer hover:scale-105 transition-transform">
@@ -42,8 +42,8 @@ const Navbar = ({ balance, dayCount, onViewChange, currentView, level, xp, xpToN
       {/* Oculto no Mobile (md:flex), pois usaremos a BottomNav */}
       <div className="hidden md:flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0 scrollbar-hide no-scrollbar">
         <div className="hidden md:flex gap-1 mr-2">
-           {automations?.NUTRIBOT?.active && <div className="bg-blue-100 text-blue-600 p-1 rounded-lg text-xs font-bold border border-blue-200 flex items-center gap-1 animate-pulse"><Bot size={14}/> Auto</div>}
-           {automations?.CLEANSWEEP?.active && <div className="bg-green-100 text-green-600 p-1 rounded-lg text-xs font-bold border border-green-200 flex items-center gap-1 animate-pulse"><Trash2 size={14}/> Auto</div>}
+           {automations?.NUTRIBOT?.active && <div className="bg-blue-100 text-blue-600 p-1 rounded-lg text-xs font-bold border border-blue-200 flex items-center gap-1 animate-pulse"><Bot size={14}/> {t('store_active')}</div>}
+           {automations?.CLEANSWEEP?.active && <div className="bg-green-100 text-green-600 p-1 rounded-lg text-xs font-bold border border-green-200 flex items-center gap-1 animate-pulse"><Trash2 size={14}/> {t('store_active')}</div>}
         </div>
 
         <div onClick={() => { playSound('pop'); onViewChange('BANK'); }} className={`p-2 rounded-full border-b-4 active:border-b-0 active:translate-y-1 transition-all cursor-pointer shadow-sm shrink-0 ${currentView === 'BANK' ? 'bg-green-100 text-green-700 border-green-300' : 'bg-white text-slate-400 border-slate-200 hover:text-green-600'}`} title={t('view_bank')}><Landmark size={20} /></div>
@@ -55,7 +55,7 @@ const Navbar = ({ balance, dayCount, onViewChange, currentView, level, xp, xpToN
 
         <div onClick={() => { playSound('pop'); onViewChange('SETTINGS'); }} className={`p-2 rounded-full border-b-4 active:border-b-0 active:translate-y-1 transition-all cursor-pointer shadow-sm shrink-0 ${currentView === 'SETTINGS' ? 'bg-slate-200 text-slate-600 border-slate-400' : 'bg-white text-slate-400 border-slate-200 hover:text-slate-600'}`} title={t('settings')}><SettingsIcon size={20} /></div>
         <div onClick={() => { playSound('pop'); onViewChange('CHASE'); }} className={`p-2 rounded-full border-b-4 active:border-b-0 active:translate-y-1 transition-all cursor-pointer shadow-sm shrink-0 ${currentView === 'CHASE' ? 'bg-purple-100 text-purple-600 border-purple-300' : 'bg-white text-slate-400 border-slate-200 hover:text-purple-500'}`} title={t('view_chase')}><Gamepad2 size={20} /></div>
-        <div onClick={() => { playSound('pop'); onViewChange('WHEEL'); }} className={`p-2 rounded-full border-b-4 active:border-b-0 active:translate-y-1 transition-all cursor-pointer shadow-sm shrink-0 ${currentView === 'WHEEL' ? 'bg-purple-50 text-purple-400 border-purple-200' : 'bg-white text-slate-400 border-slate-200 hover:text-purple-400'}`} title="Daily Wheel"><Dices size={20} /></div>
+        <div onClick={() => { playSound('pop'); onViewChange('WHEEL'); }} className={`p-2 rounded-full border-b-4 active:border-b-0 active:translate-y-1 transition-all cursor-pointer shadow-sm shrink-0 ${currentView === 'WHEEL' ? 'bg-purple-50 text-purple-400 border-purple-200' : 'bg-white text-slate-400 border-slate-200 hover:text-purple-400'}`} title={t('wheel_title')}><Dices size={20} /></div>
         <div onClick={() => { playSound('pop'); onViewChange('COMMUNITY'); }} className={`p-2 rounded-full border-b-4 active:border-b-0 active:translate-y-1 transition-all cursor-pointer shadow-sm shrink-0 ${currentView === 'COMMUNITY' ? 'bg-blue-100 text-blue-600 border-blue-300' : 'bg-white text-slate-400 border-slate-200 hover:text-blue-500'}`} title={t('view_community')}><Users2 size={20} /></div>
         <div onClick={() => { playSound('pop'); openQuests(); }} className="relative p-2 rounded-full border-b-4 bg-white text-slate-400 border-slate-200 hover:text-blue-500 cursor-pointer shadow-sm active:border-b-0 active:translate-y-1 shrink-0" title={t('quests')}>
           <ClipboardList size={20} />
