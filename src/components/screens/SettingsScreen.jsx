@@ -1,9 +1,11 @@
 import React from 'react';
-import { X, Volume2, VolumeX, Save, Download, Crown, Globe } from 'lucide-react';
+import { X, Volume2, VolumeX, Save, Download, Crown, Globe, RefreshCcw } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useTutorial } from '../../contexts/TutorialContext';
 
 const SettingsScreen = ({ onBack, onReset, dayCount, isMuted, toggleMute, onPrestige, canPrestige, goldenEggsToGain, onExportSave, onImportSave }) => {
   const { t, language, changeLanguage, languages } = useLanguage();
+  const { restartTutorial } = useTutorial();
 
   return (
     <div className="animate-in slide-in-from-right-10 fade-in pb-24 md:pb-0">
@@ -17,6 +19,19 @@ const SettingsScreen = ({ onBack, onReset, dayCount, isMuted, toggleMute, onPres
       </div>
 
       <div className="bg-white/90 p-6 rounded-3xl border-b-4 border-slate-200 space-y-6">
+        {/* Tutorial */}
+        <div className="p-4 bg-blue-50 rounded-2xl border-2 border-blue-200">
+          <h3 className="font-black text-blue-800 flex items-center gap-2 mb-2">
+            <RefreshCcw size={20}/> {t('settings_tutorial_title')}
+          </h3>
+          <button 
+            onClick={() => { restartTutorial(); onBack(); }}
+            className="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-black shadow-sm text-xs border-b-4 border-blue-700 active:border-b-0 active:translate-y-1 transition-all"
+          >
+            {t('settings_tutorial_btn')}
+          </button>
+        </div>
+
         {/* Som */}
         <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200">
           <div className="flex items-center gap-3">

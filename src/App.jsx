@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  ArrowUpCircle, Lock, Moon, Gamepad2, Dna, Zap
+  ArrowUpCircle, Lock, Moon
 } from 'lucide-react';
 
 // Dados e Configuração
@@ -46,14 +46,17 @@ import ChickenChaseScreen from './components/screens/ChickenChaseScreen';
 import CockfightScreen from './components/screens/CockfightScreen';
 import HarvestGameScreen from './components/screens/harvest/HarvestGameScreen';
 import { useLanguage } from './contexts/LanguageContext';
+import { useTutorial, TUTORIAL_STEPS } from './contexts/TutorialContext';
+import TutorialOverlay from './components/ui/TutorialOverlay';
 
 // --- APP PRINCIPAL ---
 export default function App() {
   const { t } = useLanguage();
+  const { updateGameState, advanceStep, currentStep } = useTutorial();
   const [session, setSession] = useState(() => localStorage.getItem('farm_session') || 'AUTH');
   const [balance, setBalance] = useState(() => {
-    const val = Number(localStorage.getItem('farm_balance'));
-    return isNaN(val) ? 0 : val;
+    const val = localStorage.getItem('farm_balance');
+    return val === null ? 100 : Number(val); // 100 coins initial
   });
   const [bankBalance, setBankBalance] = useState(() => {
     const val = Number(localStorage.getItem('farm_bank_balance'));
@@ -99,10 +102,23 @@ export default function App() {
           });
         }
       }
+      // Initial Chick: age_days 0 to require 30 days growth
+      return [{ 
+        id: 1, 
+        type: 'GRANJA', 
+        name: t('app_starter_name'), 
+        age_days: 0, 
+        last_fed_day: 1, 
+        is_sick: false, 
+        has_poop: false, 
+        last_collected_day: 0,
+        is_starter: true,
+        immune: true 
+      }]; 
     } catch (e) {
       console.error("Erro ao carregar galinhas:", e);
+      return [];
     }
-    return []; 
   });
 
   const [automations, setAutomations] = useState(() => {
@@ -246,6 +262,11 @@ export default function App() {
   const [toast, setToast] = useState(null);
   const [floatingTexts, setFloatingTexts] = useState([]);
   const [showLevelUp, setShowLevelUp] = useState(false);
+
+  // Tutorial State Sync
+  useEffect(() => {
+    updateGameState({ chickens, inventory, balance, currentView: view, dayCount, canSpin: canSpinWheel() });
+  }, [chickens, inventory, balance, view, dayCount]);
 
   useEffect(() => {
     setGlobalMute(isMuted);
@@ -783,6 +804,11 @@ export default function App() {
       setChickens(prev => prev.map(c => c.id === chicken.id ? { ...c, last_fed_day: dayCount } : c));
       showToast(t('app_fed_msg'), 'info');
       updateQuestProgress('FEED');
+
+      // Tutorial Check
+      if (currentStep === TUTORIAL_STEPS.FEED_CHICK) {
+        advanceStep(TUTORIAL_STEPS.CHECK_BARN);
+      }
     } else { showToast(t('app_no_feed_barn'), "error"); }
   };
   
@@ -826,6 +852,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen relative font-sans select-none overflow-hidden bg-slate-100">
+      <TutorialOverlay />
       {/* ENGENHARIA: Passando skin ID para o background */}
       <FarmBackground isNight={isNight} weather={weather} skinId={currentSkin} />
       <FloatingText items={floatingTexts} />
@@ -851,23 +878,17 @@ export default function App() {
 
             {view === 'COOP' ? (
               <div className="animate-in slide-in-from-left-10 fade-in duration-300 pb-24 md:pb-0">
-                 <div className="fixed bottom-24 right-4 md:bottom-6 md:right-6 z-[70] flex flex-col gap-4">
-                   <button onClick={() => setView('CHASE')} className="bg-purple-600 hover:bg-purple-700 text-white w-14 h-14 md:w-16 md:h-16 rounded-full shadow-2xl flex items-center justify-center border-4 border-purple-400 animate-in zoom-in group relative">
-                     <Gamepad2 size={32} fill="currentColor" className="group-hover:rotate-12 transition-transform"/>
-                     <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full border-2 border-white animate-pulse">{t('nav_new')}</span>
-                   </button>
-                   <button onClick={() => setView('HARVEST')} className="bg-green-600 hover:bg-green-700 text-white w-14 h-14 md:w-16 md:h-16 rounded-full shadow-2xl flex items-center justify-center border-4 border-green-400 animate-in zoom-in group relative">
-                     <Zap size={32} fill="currentColor" className="group-hover:scale-110 transition-transform"/>
-                   </button>
-                   {upgrades.LAB && (
-                     <button onClick={() => setView('LAB')} className="bg-pink-500 hover:bg-pink-600 text-white w-14 h-14 md:w-16 md:h-16 rounded-full shadow-2xl flex items-center justify-center border-4 border-pink-400 animate-in zoom-in">
-                       <Dna size={32} fill="currentColor" className="animate-pulse"/>
-                     </button>
-                   )}
-                   <button onClick={handleSleep} disabled={isNight} className="bg-indigo-600 hover:bg-indigo-700 text-white w-14 h-14 md:w-16 md:h-16 rounded-full shadow-2xl flex items-center justify-center border-4 border-indigo-400 animate-bounce">
-                     {isNight ? <span className="animate-spin">⏳</span> : <Moon size={32} fill="currentColor" />}
+                 {/* Botão de Avançar Dia (Lua) - Apenas para Testes/MVP */}
+                 <div className="fixed bottom-24 right-4 md:bottom-6 md:right-6 z-[70]">
+                   <button 
+                    onClick={handleSleep} 
+                    disabled={isNight} 
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white w-14 h-14 md:w-16 md:h-16 rounded-full shadow-2xl flex items-center justify-center border-4 border-indigo-400 animate-bounce transition-all active:scale-90"
+                   >
+                     {isNight ? <span className="animate-spin text-xl">⏳</span> : <Moon size={32} fill="currentColor" />}
                    </button>
                  </div>
+
                  <div className="mb-6 bg-white/60 backdrop-blur-sm p-4 rounded-2xl inline-block border-2 border-white/50 shadow-sm">
                    <h1 className="text-2xl font-black text-slate-800 drop-shadow-sm">{t('app_coop_title')}</h1>
                    <p className="text-slate-700 font-medium text-xs sm:text-sm">{t('app_capacity', [chickens.length, maxCapacity])}</p>
