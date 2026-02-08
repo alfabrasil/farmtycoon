@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 import { 
   ArrowUpCircle, Lock, Moon
 } from 'lucide-react';
@@ -23,6 +24,7 @@ import AchievementModal from './components/modals/AchievementModal';
 import QuestsModal from './components/modals/QuestsModal';
 import LevelUpModal from './components/modals/LevelUpModal';
 import LegendaryDropModal from './components/modals/LegendaryDropModal';
+import ChickenCustomizer from './components/modals/ChickenCustomizer';
 
 // Componentes Principais
 import Navbar from './components/Navbar';
@@ -94,7 +96,15 @@ export default function App() {
       if (s) {
         const parsed = JSON.parse(s);
         if (Array.isArray(parsed)) {
+          const seenIds = new Set();
           return parsed.map(c => {
+            // Garante unicidade de IDs (Correção de Bug de Chaves Duplicadas)
+            if (seenIds.has(c.id)) {
+              console.warn('Duplicate chicken ID found, regenerating:', c.id);
+              c.id = uuidv4();
+            }
+            seenIds.add(c.id);
+
             if (c.is_starter || c.name === t('app_starter_name') || c.id === 1) {
                return { ...c, last_collected_day: c.last_collected_day || 0, is_starter: true, immune: true, is_sick: false };
             }
@@ -262,6 +272,7 @@ export default function App() {
   const [toast, setToast] = useState(null);
   const [floatingTexts, setFloatingTexts] = useState([]);
   const [showLevelUp, setShowLevelUp] = useState(false);
+  const [customizingChicken, setCustomizingChicken] = useState(null);
 
   // Tutorial State Sync
   useEffect(() => {
@@ -349,7 +360,7 @@ export default function App() {
     const spawnInterval = setInterval(() => {
       if (upgrades.FENCE) return; 
       if (session === 'GAME' && !fox && !isNight && Math.random() < 0.3) {
-        const newFox = { id: Date.now(), x: Math.random() * 80 + 10, y: Math.random() * 60 + 20 };
+        const newFox = { id: uuidv4(), x: Math.random() * 80 + 10, y: Math.random() * 60 + 20 };
         setFox(newFox);
         playSound('fox');
         showToast(t('fox_appeared'), "error");
@@ -406,7 +417,7 @@ export default function App() {
   }, [stats]);
 
   const addFloatingText = (x, y, text, color) => {
-    const id = Date.now();
+    const id = uuidv4();
     setFloatingTexts(prev => [...prev, { id, x, y, text, color }]);
     setTimeout(() => setFloatingTexts(prev => prev.filter(item => item.id !== id)), 1000);
   };
@@ -502,7 +513,7 @@ export default function App() {
     if (balance >= listing.price && chickens.length < maxCapacity) {
       setBalance(prev => prev - listing.price);
       setChickens(prev => [...prev, {
-        id: Date.now(),
+        id: uuidv4(),
         type: listing.type,
         name: t('app_auction_prefix', [t(TYPE_CONFIG[listing.type].nameKey)]),
         age_days: listing.age,
@@ -539,7 +550,7 @@ export default function App() {
     setXp(0);
     setMaxCapacity(4);
     setInventory({ feed: 5, vaccine: 0, eggs_common: 0, eggs_rare: 0, eggs_legendary: 0 });
-    setChickens([{ id: Date.now(), type: "GRANJA", name: t('app_rebirth_name'), age_days: 0, last_fed_day: 1, is_sick: false, has_poop: false, last_collected_day: 0 }]);
+    setChickens([{ id: uuidv4(), type: "GRANJA", name: t('app_rebirth_name'), age_days: 0, last_fed_day: 1, is_sick: false, has_poop: false, last_collected_day: 0 }]);
     setAutomations({});
     setUpgrades({});
     setCoopProgress(0);
@@ -644,7 +655,7 @@ export default function App() {
 
       if (Math.random() < 0.5 && auctionItems.length < 5) {
          setAuctionItems(prev => [...prev, { 
-           id: Date.now(), 
+           id: uuidv4(), 
            seller: 'BotFarm', 
            type: Math.random() > 0.5 ? 'CAIPIRA' : 'GIGANTE', 
            age: Math.floor(Math.random() * 30) + 1, 
@@ -719,7 +730,7 @@ export default function App() {
       setBalance(prev => prev - product.priceCoins);
       const nameKey = `chicken_name_${product.type}`;
       setChickens([...chickens, { 
-        id: Date.now(), 
+        id: uuidv4(), 
         type: product.type, 
         nameKey: nameKey,
         name: t(nameKey), 
@@ -798,7 +809,8 @@ export default function App() {
   };
   
   const handleFeed = (chicken) => {
-    const config = TYPE_CONFIG[chicken.type];
+    // Fallback to GRANJA if type is invalid
+    const config = TYPE_CONFIG[chicken.type] || TYPE_CONFIG.GRANJA;
     if (inventory.feed >= config.feedConsumption) {
       setInventory(prev => ({ ...prev, feed: prev.feed - config.feedConsumption }));
       setChickens(prev => prev.map(c => c.id === chicken.id ? { ...c, last_fed_day: dayCount } : c));
@@ -838,7 +850,7 @@ export default function App() {
     playSound('success');
     addFloatingText(e.clientX, e.clientY, `+${commission} 💰`, '#22c55e');
     showToast(t('app_referral_commission', [levelConfig.label]), 'success');
-    setReferralHistory(prev => [{ id: Date.now(), desc: t('app_referral_history_desc', [levelConfig.level, 'Gigante']), amount: commission }, ...prev]);
+    setReferralHistory(prev => [{ id: uuidv4(), desc: t('app_referral_history_desc', [levelConfig.level, 'Gigante']), amount: commission }, ...prev]);
   };
 
   const handleCloseAchievement = () => {
@@ -846,6 +858,14 @@ export default function App() {
       setBalance(prev => prev + newAchievement.reward); 
       setNewAchievement(null);
     }
+  };
+
+  const handleUpdateChicken = (chickenId, updates) => {
+    setChickens(prev => prev.map(c => 
+      c.id === chickenId ? { ...c, ...updates } : c
+    ));
+    // Atualiza também a referência do modal para refletir mudanças em tempo real
+    setCustomizingChicken(prev => ({ ...prev, ...updates }));
   };
   
   const pendingRewards = quests.some(q => q.completed && !q.claimed);
@@ -860,17 +880,25 @@ export default function App() {
       {showLevelUp && <LevelUpModal newLevel={level} onClose={() => setShowLevelUp(false)} />}
       {showQuests && <QuestsModal quests={quests} onClose={() => setShowQuests(false)} onClaim={handleClaimQuest} />}
       
+      {customizingChicken && (
+        <ChickenCustomizer 
+          chicken={customizingChicken} 
+          onClose={() => setCustomizingChicken(null)} 
+          onUpdateChicken={handleUpdateChicken}
+        />
+      )}
+
       {newAchievement && <AchievementModal achievement={newAchievement} onClose={handleCloseAchievement} />}
 
       {session === 'GAME' && fox && <FoxComponent x={fox.x} y={fox.y} onClick={handleFoxClick} />}
 
       {session === 'AUTH' && <AuthScreen onLogin={() => setSession('UNBOXING')} />}
-      {session === 'UNBOXING' && <UnboxingScreen onFinish={() => {setChickens([{ id: 1, type: "GRANJA", name: t('app_starter_name'), age_days: 0, last_fed_day: 1, is_sick: false, has_poop: false, last_collected_day: 0, is_starter: true, immune: true }]); setBalance(50); setInventory(prev=>({...prev, feed:5})); generateDailyQuests(); setSession('GAME');}} />}
+      {session === 'UNBOXING' && <UnboxingScreen onFinish={() => {setChickens([{ id: uuidv4(), type: "GRANJA", name: t('app_starter_name'), age_days: 0, last_fed_day: 1, is_sick: false, has_poop: false, last_collected_day: 0, is_starter: true, immune: true }]); setBalance(50); setInventory(prev=>({...prev, feed:5})); generateDailyQuests(); setSession('GAME');}} />}
       
       {session === 'GAME' && (
         <div className="relative z-10 h-screen overflow-y-auto">
           {/* Adicionando MobileBottomNav condicionalmente */}
-          <MobileBottomNav currentView={view} onViewChange={setView} openQuests={() => setShowQuests(true)} pendingRewards={pendingRewards} />
+          <MobileBottomNav currentView={view} onViewChange={setView} openQuests={() => setShowQuests(true)} pendingRewards={pendingRewards} upgrades={upgrades} />
 
           <div className="p-4 max-w-4xl mx-auto min-h-full pb-24 md:pb-4">
             <Navbar balance={balance} dayCount={dayCount} onViewChange={setView} currentView={view} level={level} xp={xp} xpToNextLevel={level*100} weather={weather} openQuests={() => setShowQuests(true)} goldenEggs={goldenEggs} pendingRewards={pendingRewards} automations={automations} upgrades={upgrades} />
@@ -895,7 +923,7 @@ export default function App() {
                  </div>
                  {chickens.length === 0 ? <div className="text-center bg-white/50 p-8 rounded-3xl">{t('app_empty_barn')}</div> : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 justify-items-center">
-                    {chickens.map(chicken => (<ChickenCard key={chicken.id} chicken={chicken} onFeed={handleFeed} onCollect={handleCollect} onHeal={handleHeal} onClean={handleClean} inventory={inventory} dayCount={dayCount} addFloatingText={addFloatingText} />))}
+                    {chickens.map(chicken => (<ChickenCard key={chicken.id} chicken={chicken} onFeed={handleFeed} onCollect={handleCollect} onHeal={handleHeal} onClean={handleClean} onCustomize={setCustomizingChicken} inventory={inventory} dayCount={dayCount} addFloatingText={addFloatingText} />))}
                     {chickens.length < maxCapacity ? (
                       <div onClick={() => setView('STORE')} className="w-full min-h-[300px] rounded-3xl border-4 border-dashed border-white/60 bg-white/30 backdrop-blur-sm flex flex-col items-center justify-center gap-4 text-white hover:bg-white/50 hover:border-white cursor-pointer transition-all group shadow-lg"><ArrowUpCircle size={48} /><span className="font-black text-lg text-slate-800 drop-shadow-md">{t('app_new_chicken')}</span></div>
                     ) : (

@@ -4,9 +4,9 @@ export const TYPE_CONFIG = {
   GRANJA: { labelKey: "type_GRANJA_label", color: "bg-yellow-100", border: "border-yellow-500", label: "Granja Comum", icon: "🐓", feedConsumption: 1, collectChance: { common: 0.9, rare: 0.1, legendary: 0 } },
   CAIPIRA: { labelKey: "type_CAIPIRA_label", color: "bg-orange-100", border: "border-orange-600", label: "Caipira Raiz", icon: "🐔", feedConsumption: 1, collectChance: { common: 0.5, rare: 0.45, legendary: 0.05 } },
   GIGANTE: { labelKey: "type_GIGANTE_label", color: "bg-purple-100", border: "border-purple-600", label: "Galinha-Rex", icon: "🦖", feedConsumption: 2, collectChance: { common: 0.2, rare: 0.5, legendary: 0.3 } },
-  HIBRIDA: { labelKey: "type_HIBRIDA_label", color: "bg-pink-100", border: "border-pink-500", label: "Unicórnio Ágil", icon: "🦄", feedConsumption: 1, collectChance: { common: 0.3, rare: 0.6, legendary: 0.1 } },
-  MUTANTE: { labelKey: "type_MUTANTE_label", color: "bg-green-900", border: "border-green-400", label: "ET Bilu", icon: "👽", feedConsumption: 0, collectChance: { common: 0, rare: 0.2, legendary: 0.8 }, textColor: "text-green-400" },
-  CYBER:   { labelKey: "type_CYBER_label", color: "bg-slate-800", border: "border-cyan-400", label: "Robo-Chicken", icon: "🤖", feedConsumption: 3, collectChance: { common: 0, rare: 0, legendary: 1.0 }, textColor: "text-cyan-300" }
+  griffin: { labelKey: "type_griffin_label", color: "bg-pink-100", border: "border-pink-500", label: "Grifo", icon: "🦄", feedConsumption: 1, collectChance: { common: 0.3, rare: 0.6, legendary: 0.1 } },
+  alien: { labelKey: "type_alien_label", color: "bg-green-900", border: "border-green-400", label: "Alien", icon: "👽", feedConsumption: 0, collectChance: { common: 0, rare: 0.2, legendary: 0.8 }, textColor: "text-green-400" },
+  robot:   { labelKey: "type_robot_label", color: "bg-slate-800", border: "border-cyan-400", label: "Robot", icon: "🤖", feedConsumption: 3, collectChance: { common: 0, rare: 0, legendary: 1.0 }, textColor: "text-cyan-300" }
 };
 
 export const SKINS_CONFIG = {
@@ -41,9 +41,9 @@ export const MINIGAME_CONFIG = {
       GRANJA: { labelKey: 'passive_GRANJA_label', descKey: 'passive_GRANJA_desc', label: 'Resistência', icon: '🛡️', desc: 'Imune a 1 Ovo Podre', bonus: 'SHIELD_ONCE' },
       CAIPIRA: { labelKey: 'passive_CAIPIRA_label', descKey: 'passive_CAIPIRA_desc', label: 'Instinto', icon: '🔍', desc: 'Detecta itens próximos', bonus: 'VISION' },
       GIGANTE: { labelKey: 'passive_GIGANTE_label', descKey: 'passive_GIGANTE_desc', label: 'Peso Pesado', icon: '💪', desc: 'Empurra oponente 2x mais longe', bonus: 'PUSH_FORCE' },
-      HIBRIDA: { labelKey: 'passive_HIBRIDA_label', descKey: 'passive_HIBRIDA_desc', label: 'Velocidade', icon: '⚡', desc: 'Velocidade base +10%', bonus: 'SPEED_BASE', value: 0.1 },
-      MUTANTE: { labelKey: 'passive_MUTANTE_label', descKey: 'passive_MUTANTE_desc', label: 'Teletransporte', icon: '🌌', desc: 'Atravessa bordas do mapa', bonus: 'TELEPORT' },
-      CYBER: { labelKey: 'passive_CYBER_label', descKey: 'passive_CYBER_desc', label: 'Overclock', icon: '🤖', desc: 'Power-ups duram 50% mais', bonus: 'BUFF_EXTEND', value: 0.5 }
+      griffin: { labelKey: 'passive_griffin_label', descKey: 'passive_griffin_desc', label: 'Velocidade', icon: '⚡', desc: 'Velocidade base +10%', bonus: 'SPEED_BASE', value: 0.1 },
+      alien: { labelKey: 'passive_alien_label', descKey: 'passive_alien_desc', label: 'Teletransporte', icon: '🌌', desc: 'Atravessa bordas do mapa', bonus: 'TELEPORT' },
+      robot: { labelKey: 'passive_robot_label', descKey: 'passive_robot_desc', label: 'Overclock', icon: '🤖', desc: 'Power-ups duram 50% mais', bonus: 'BUFF_EXTEND', value: 0.5 }
     }
   }
 };
