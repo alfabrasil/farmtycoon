@@ -511,11 +511,12 @@ export default function App() {
 
   const handleBuyAuction = (listing) => {
     if (balance >= listing.price && chickens.length < maxCapacity) {
+      const config = TYPE_CONFIG[listing.type] || TYPE_CONFIG.GRANJA;
       setBalance(prev => prev - listing.price);
       setChickens(prev => [...prev, {
         id: uuidv4(),
         type: listing.type,
-        name: t('app_auction_prefix', [t(TYPE_CONFIG[listing.type].nameKey)]),
+        name: t('app_auction_prefix', [t(config.nameKey)]),
         age_days: listing.age,
         last_fed_day: dayCount,
         is_sick: false,
@@ -524,7 +525,7 @@ export default function App() {
       }]);
       setAuctionItems(prev => prev.filter(item => item.id !== listing.id));
       playSound('sold');
-      showToast(t('app_bought_animal', [t(TYPE_CONFIG[listing.type].nameKey)]), 'success');
+      showToast(t('app_bought_animal', [t(config.nameKey)]), 'success');
     } else if (chickens.length >= maxCapacity) {
       showToast(t('app_barn_full'), "error");
     } else {
@@ -533,7 +534,8 @@ export default function App() {
   };
 
   const handleSellAuction = (chicken) => {
-    const price = Math.floor(TYPE_CONFIG[chicken.type].feedConsumption * 100 + chicken.age_days * 2);
+    const config = TYPE_CONFIG[chicken.type] || TYPE_CONFIG.GRANJA;
+    const price = Math.floor(config.feedConsumption * 100 + chicken.age_days * 2);
     setBalance(prev => prev + price);
     setChickens(prev => prev.filter(c => c.id !== chicken.id));
     playSound('sold');
@@ -586,7 +588,8 @@ export default function App() {
         
         const nextChickens = chickens.map(c => {
           if (c.last_fed_day < nextDay) {
-             const consumption = TYPE_CONFIG[c.type].feedConsumption;
+             const config = TYPE_CONFIG[c.type] || TYPE_CONFIG.GRANJA;
+             const consumption = config.feedConsumption;
              if (tempFeed >= consumption) {
                tempFeed -= consumption;
                feedUsed += consumption;

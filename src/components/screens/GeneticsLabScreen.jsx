@@ -5,6 +5,7 @@ import { TYPE_CONFIG, BREEDING_COST } from '../../data/gameConfig';
 import { playSound } from '../../utils/audioSystem';
 import { calculateBreedingResult } from '../../utils/genetics';
 import { useLanguage } from '../../contexts/LanguageContext';
+import ChickenVisual from '../game/ChickenVisual';
 
 const GeneticsLabScreen = ({ onBack, chickens, balance, setBalance, setChickens, maxCapacity, showToast, dayCount }) => {
   const { t } = useLanguage();
@@ -147,12 +148,12 @@ const GeneticsLabScreen = ({ onBack, chickens, balance, setBalance, setChickens,
       
       <div className="bg-slate-800 text-white p-6 rounded-3xl shadow-xl mb-6 relative overflow-hidden border-b-8 border-slate-950">
         <div className="relative z-10 flex justify-between items-center">
-          <div className={`w-24 h-24 rounded-2xl border-4 border-dashed flex items-center justify-center cursor-pointer transition-all ${parent1 ? 'bg-white border-white' : 'bg-white/10 border-white/30 hover:bg-white/20'}`} onClick={() => setParent1(null)}>
-            {parent1 ? <div className="text-4xl">{TYPE_CONFIG[parent1.type].icon}</div> : <span className="text-xs font-bold text-white/50">{t('genetics_parent_a')}</span>}
+          <div className={`w-24 h-24 rounded-2xl border-4 border-dashed flex items-center justify-center cursor-pointer transition-all overflow-hidden ${parent1 ? 'bg-white border-white' : 'bg-white/10 border-white/30 hover:bg-white/20'}`} onClick={() => setParent1(null)}>
+            {parent1 ? <div className="w-full h-full"><ChickenVisual chicken={parent1} className="w-full h-full scale-125 translate-y-4" /></div> : <span className="text-xs font-bold text-white/50">{t('genetics_parent_a')}</span>}
           </div>
           <div className="text-2xl font-black text-pink-500 animate-pulse">+</div>
-          <div className={`w-24 h-24 rounded-2xl border-4 border-dashed flex items-center justify-center cursor-pointer transition-all ${parent2 ? 'bg-white border-white' : 'bg-white/10 border-white/30 hover:bg-white/20'}`} onClick={() => setParent2(null)}>
-             {parent2 ? <div className="text-4xl">{TYPE_CONFIG[parent2.type].icon}</div> : <span className="text-xs font-bold text-white/50">{t('genetics_parent_b')}</span>}
+          <div className={`w-24 h-24 rounded-2xl border-4 border-dashed flex items-center justify-center cursor-pointer transition-all overflow-hidden ${parent2 ? 'bg-white border-white' : 'bg-white/10 border-white/30 hover:bg-white/20'}`} onClick={() => setParent2(null)}>
+             {parent2 ? <div className="w-full h-full"><ChickenVisual chicken={parent2} className="w-full h-full scale-125 translate-y-4" /></div> : <span className="text-xs font-bold text-white/50">{t('genetics_parent_b')}</span>}
           </div>
         </div>
         <div className="mt-6">
@@ -174,10 +175,14 @@ const GeneticsLabScreen = ({ onBack, chickens, balance, setBalance, setChickens,
               key={c.id} 
               disabled={parent1?.id === c.id || parent2?.id === c.id}
               onClick={() => !parent1 ? setParent1(c) : setParent2(c)}
-              className={`aspect-square rounded-xl border-2 flex flex-col items-center justify-center bg-slate-50 hover:bg-green-50 disabled:opacity-50 disabled:grayscale ${parent1?.id === c.id || parent2?.id === c.id ? 'border-green-500 bg-green-100' : 'border-slate-200'}`}
+              className={`aspect-square rounded-xl border-2 relative bg-slate-50 hover:bg-green-50 disabled:opacity-50 disabled:grayscale overflow-hidden ${parent1?.id === c.id || parent2?.id === c.id ? 'border-green-500 bg-green-100' : 'border-slate-200'}`}
             >
-              <span className="text-2xl">{c.variant ? c.variant.icon : TYPE_CONFIG[c.type].icon}</span>
-              <span className="text-[8px] font-bold text-slate-500 truncate w-full text-center px-1">{c.name}</span>
+              <div className="absolute inset-0 flex items-center justify-center pb-5">
+                 <ChickenVisual chicken={c} className="w-16 h-16 scale-125" />
+              </div>
+              <div className="absolute bottom-0 left-0 w-full bg-white/95 border-t border-slate-200 py-1 px-0.5 z-10 flex items-center justify-center min-h-[24px]">
+                  <p className="text-[9px] font-black text-slate-800 truncate w-full text-center uppercase tracking-tight leading-none">{c.name}</p>
+              </div>
             </button>
           ))}
         </div>
