@@ -1,11 +1,37 @@
-import React from 'react';
-import { X, Volume2, VolumeX, Save, Download, Crown, Globe, RefreshCcw } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Volume2, VolumeX, Save, Download, Crown, Globe, RefreshCcw, Music } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTutorial } from '../../contexts/TutorialContext';
+import { bgm } from '../../utils/musicSystem';
 
 const SettingsScreen = ({ onBack, onReset, dayCount, isMuted, toggleMute, onPrestige, canPrestige, goldenEggsToGain, onExportSave, onImportSave }) => {
   const { t, language, changeLanguage, languages } = useLanguage();
   const { restartTutorial } = useTutorial();
+
+  // Estado local para controle da música
+  const [musicEnabled, setMusicEnabled] = useState(bgm.isEnabledState());
+  const [musicVolume, setMusicVolume] = useState(bgm.getVolume());
+
+  // Sincronização com MusicSystem (Observer)
+  useEffect(() => {
+    const unsubscribe = bgm.subscribe((state) => {
+      setMusicEnabled(state.enabled);
+      setMusicVolume(state.volume);
+    });
+    return unsubscribe;
+  }, []);
+
+  const handleMusicToggle = () => {
+    const newState = !musicEnabled;
+    setMusicEnabled(newState);
+    bgm.toggle(newState);
+  };
+
+  const handleVolumeChange = (e) => {
+    const val = parseFloat(e.target.value);
+    setMusicVolume(val);
+    bgm.setVolume(val);
+  };
 
   return (
     <div className="animate-in slide-in-from-right-10 fade-in pb-24 md:pb-0">
@@ -32,18 +58,54 @@ const SettingsScreen = ({ onBack, onReset, dayCount, isMuted, toggleMute, onPres
           </button>
         </div>
 
-        {/* Som */}
-        <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200">
-          <div className="flex items-center gap-3">
-            {isMuted ? <VolumeX size={24} className="text-slate-400"/> : <Volume2 size={24} className="text-blue-500"/>}
-            <span className="font-bold text-slate-700">{isMuted ? t('sound_off') : t('sound_on')}</span>
+        {/* Áudio (SFX + BGM) */}
+        <div className="space-y-3">
+           {/* SFX */}
+          <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200">
+            <div className="flex items-center gap-3">
+              {isMuted ? <VolumeX size={24} className="text-slate-400"/> : <Volume2 size={24} className="text-blue-500"/>}
+              <span className="font-bold text-slate-700">{isMuted ? t('sound_off') : t('sound_on')}</span>
+            </div>
+            <button 
+              onClick={toggleMute} 
+              className={`w-12 h-6 rounded-full transition-all relative ${isMuted ? 'bg-slate-300' : 'bg-blue-500'}`}
+            >
+              <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${isMuted ? 'left-1' : 'left-7'}`}></div>
+            </button>
           </div>
-          <button 
-            onClick={toggleMute} 
-            className={`w-12 h-6 rounded-full transition-all relative ${isMuted ? 'bg-slate-300' : 'bg-blue-500'}`}
-          >
-            <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${isMuted ? 'left-1' : 'left-7'}`}></div>
-          </button>
+
+          {/* BGM (Música) */}
+          <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-3">
+                <Music size={24} className={musicEnabled ? "text-purple-500" : "text-slate-400"}/>
+                <span className="font-bold text-slate-700">Música de Fundo</span>
+              </div>
+              <button 
+                onClick={handleMusicToggle} 
+                className={`w-12 h-6 rounded-full transition-all relative ${!musicEnabled ? 'bg-slate-300' : 'bg-purple-500'}`}
+              >
+                <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${!musicEnabled ? 'left-1' : 'left-7'}`}></div>
+              </button>
+            </div>
+            
+            {/* Volume Slider */}
+            <div className={`transition-all duration-300 ${!musicEnabled ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold text-slate-400">VOL</span>
+                <input 
+                  type="range" 
+                  min="0" 
+                  max="1" 
+                  step="0.05" 
+                  value={musicVolume} 
+                  onChange={handleVolumeChange}
+                  className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                />
+                <span className="text-[10px] font-bold text-slate-500 w-6 text-right">{Math.round(musicVolume * 100)}%</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Idioma */}

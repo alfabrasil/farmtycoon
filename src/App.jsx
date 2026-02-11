@@ -13,6 +13,7 @@ import {
 
 // Utilitários
 import { playSound, setGlobalMute, initAudio, attachAudioUnlockListeners } from './utils/audioSystem';
+import { bgm } from './utils/musicSystem';
 
 // Componentes UI
 import FoxComponent from './components/ui/Fox';
@@ -174,6 +175,16 @@ export default function App() {
     return isNaN(val) ? 0 : val;
   });
 
+  // Inicialização do Sistema de Áudio (SFX + Música)
+  useEffect(() => {
+    // Inicializa SFX (WebAudio + Pool)
+    initAudio();
+    attachAudioUnlockListeners();
+    
+    // Inicializa Música de Fundo
+    bgm.init();
+  }, []);
+
   // MIGRAÇÃO DE NOMES (Auto-fix para tradução dinâmica)
   useEffect(() => {
     setChickens(prev => prev.map(c => {
@@ -239,11 +250,21 @@ export default function App() {
     }
   });
 
-  // ENGENHARIA: Desbloqueio confiável de áudio no iOS (primeira interação)
+  // --- EFEITOS DE INICIALIZAÇÃO ---
   useEffect(() => {
+    // Audio Unlock (Mobile)
     attachAudioUnlockListeners();
-    // Garantir contexto criado também em navegadores não iOS
-    initAudio();
+    // Inicia Música de Fundo
+    bgm.init();
+    
+    // Recupera Mute
+    const savedMute = localStorage.getItem('farm_muted') === 'true';
+    setIsMuted(savedMute);
+    setGlobalMute(savedMute);
+
+    // Sistema de Dia/Noite Automático REMOVIDO para evitar conflito com o botão "Lua" (Manual)
+    // O ciclo agora é controlado exclusivamente pela ação do jogador de "Dormir".
+    // const timer = setInterval(() => { ... }, 5000);
   }, []);
   
   // ENGENHARIA: Novos Estados para os recursos implementados
@@ -926,7 +947,7 @@ export default function App() {
                  </div>
                  {chickens.length === 0 ? <div className="text-center bg-white/50 p-8 rounded-3xl">{t('app_empty_barn')}</div> : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 justify-items-center">
-                    {chickens.map(chicken => (<ChickenCard key={chicken.id} chicken={chicken} onFeed={handleFeed} onCollect={handleCollect} onHeal={handleHeal} onClean={handleClean} onCustomize={setCustomizingChicken} inventory={inventory} dayCount={dayCount} addFloatingText={addFloatingText} />))}
+                    {chickens.map((chicken, index) => (<ChickenCard key={`${chicken.id}-${index}`} chicken={chicken} onFeed={handleFeed} onCollect={handleCollect} onHeal={handleHeal} onClean={handleClean} onCustomize={setCustomizingChicken} inventory={inventory} dayCount={dayCount} addFloatingText={addFloatingText} />))}
                     {chickens.length < maxCapacity ? (
                       <div onClick={() => setView('STORE')} className="w-full min-h-[300px] rounded-3xl border-4 border-dashed border-white/60 bg-white/30 backdrop-blur-sm flex flex-col items-center justify-center gap-4 text-white hover:bg-white/50 hover:border-white cursor-pointer transition-all group shadow-lg"><ArrowUpCircle size={48} /><span className="font-black text-lg text-slate-800 drop-shadow-md">{t('app_new_chicken')}</span></div>
                     ) : (

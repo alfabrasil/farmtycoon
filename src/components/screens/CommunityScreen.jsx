@@ -93,10 +93,10 @@ const CommunityScreen = ({ onBack, onSimulateReferral, referralHistory, coopProg
             <h3 className="font-black text-slate-800 mb-3 flex items-center gap-2 mt-6"><DollarSign size={20}/> {t('comm_sell_your_chickens')}</h3>
             {chickens.length === 0 ? <p className="text-xs text-slate-400">{t('comm_no_chickens_to_sell')}</p> : (
               <div className="grid grid-cols-3 gap-2">
-                {chickens.map(chicken => {
+                {chickens.map((chicken, index) => {
                   const config = TYPE_CONFIG[chicken.type] || TYPE_CONFIG.GRANJA;
                   return (
-                  <div key={chicken.id} onClick={() => setSelectedSell(chicken)} className={`cursor-pointer p-2 rounded-xl border-2 transition-all ${selectedSell?.id === chicken.id ? 'bg-amber-100 border-amber-400' : 'bg-white border-slate-200'}`}>
+                  <div key={`${chicken.id}-${index}`} onClick={() => setSelectedSell(chicken)} className={`cursor-pointer p-2 rounded-xl border-2 transition-all ${selectedSell?.id === chicken.id ? 'bg-amber-100 border-amber-400' : 'bg-white border-slate-200'}`}>
                     <div className="w-12 h-12 mx-auto mb-1 flex items-center justify-center overflow-hidden">
                        <ChickenVisual chicken={chicken} className="w-full h-full scale-125 translate-y-2" />
                     </div>
