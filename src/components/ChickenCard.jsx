@@ -79,9 +79,6 @@ const ChickenCard = ({ chicken, onFeed, onCollect, onHeal, onClean, onCustomize,
     // if (isSick) return <div className="text-6xl animate-pulse grayscale brightness-50 contrast-125">🤢</div>; // REMOVIDO: Usar Sprite Layered
     if (chicken.type === 'GRANJA' && !isAdult) return <div className="text-6xl animate-bounce">🐣</div>;
     
-    // Ovo Alienígena (Verde) para Mutantes bebês
-    if (chicken.type === 'alien' && !isAdult) return <div className="animate-pulse drop-shadow-[0_0_10px_rgba(34,197,94,0.8)] text-green-500 flex items-center justify-center h-full w-full"><Egg size={48} fill="currentColor" /></div>;
-    
     // Visuais especiais para Mutantes/Cyber/Variantes
     if (variant) {
       return (
@@ -91,8 +88,6 @@ const ChickenCard = ({ chicken, onFeed, onCollect, onHeal, onClean, onCustomize,
         </div>
       );
     }
-
-    if (chicken.type === 'robot') return <div className="text-6xl drop-shadow-[0_0_15px_rgba(0,255,255,0.8)] filter contrast-150 relative">🤖<div className="absolute inset-0 border-2 border-cyan-400 rounded-full animate-ping opacity-20"></div></div>;
     
     if (chicken.age_days >= 90 && chicken.type === 'GRANJA') return <div className="relative text-6xl grayscale-[0.3]">🐔<div className="absolute top-2 left-1 bg-white/80 rounded-full p-1 border border-black rotate-12"><Glasses size={16}/></div><div className="absolute bottom-0 right-0 text-xl">🦯</div></div>;
     

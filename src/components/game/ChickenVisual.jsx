@@ -7,16 +7,19 @@ const ChickenVisual = ({ chicken, dayCount, overrideStatus = null, className = '
     return getChickenAssets(chicken, dayCount || 0, overrideStatus);
   }, [chicken, dayCount, overrideStatus]);
 
-  // Se for bebê (não adulto), por enquanto não temos sprites definidos, 
-  // então retornamos null para que o ChickenCard use o fallback (emoji).
-  // Ajuste isso se futuramente houver sprites de bebê.
-  // Nota: A lógica de verificação de adulto (age_days >= 30) está no ChickenCard.
-  // Aqui assumimos que se o componente for chamado, é para renderizar o visual completo.
-  // Mas se quisermos ser defensivos:
-  // if (chicken.age_days < (chicken.adult_threshold || 30)) return null;
+  // Ajuste de escala específico para o Alien devido ao viewBox desproporcional do SVG (muito largo)
+  // E adiciona um contorno preto (outline) para destacar o personagem
+  const outlineFilter = 'drop-shadow(2px 0 0 #000) drop-shadow(-2px 0 0 #000) drop-shadow(0 2px 0 #000) drop-shadow(0 -2px 0 #000)';
+  
+  const contentStyle = {
+    // SVGs corrigidos (viewBox 471x423), não precisa mais de escala manual
+    // ...(chicken.type === 'alien' ? { transform: 'scale(2.0) translateY(-15%)' } : {}),
+    filter: outlineFilter
+  };
 
   return (
     <div className={`relative w-24 h-24 flex items-center justify-center ${className}`}>
+      <div className="relative w-full h-full" style={contentStyle}>
       {/* 1. LEGS (Z-10) */}
       {assets.legs && (
         <img 
@@ -79,6 +82,7 @@ const ChickenVisual = ({ chicken, dayCount, overrideStatus = null, className = '
           className="absolute inset-0 w-full h-full object-contain z-50 animate-pulse" 
         />
       )}
+      </div>
     </div>
   );
 };
