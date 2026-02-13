@@ -51,12 +51,20 @@ const AuthScreen = ({ onLogin }) => {
       </div>
 
       <div className="bg-white/90 backdrop-blur-md p-8 rounded-3xl shadow-2xl w-full max-w-md border-b-8 border-slate-200 animate-in zoom-in-50">
-        <div className="text-center mb-8">
-          <div className="w-20 h-20 bg-yellow-400 rounded-full border-4 border-yellow-600 flex items-center justify-center text-4xl shadow-lg mx-auto mb-4 animate-bounce">
-            🐔
+        <div className="text-center mb-6 flex flex-col items-center">
+          {/* Logo Principal Aumentada e Responsiva */}
+          <div className="w-48 h-48 md:w-56 md:h-56 mb-2 animate-bounce hover:scale-105 transition-transform duration-300">
+            <img 
+              src="/assets/logo/logo_pool_chicken.svg" 
+              alt="Pool Chicken Logo" 
+              className="w-full h-full object-contain drop-shadow-xl"
+            />
           </div>
-          <h1 className="text-3xl font-black text-slate-800 mb-2">{t('login_title')}</h1>
-          <p className="text-slate-500 font-medium">{t('login_subtitle')}</p>
+          
+          {/* Título invisível para acessibilidade */}
+          <h1 className="sr-only">{t('login_title')}</h1>
+          
+          <p className="text-slate-600 font-bold text-xl md:text-2xl mt-2 max-w-[90%] leading-tight">{t('login_subtitle')}</p>
         </div>
         
         <form onSubmit={handleRegister} className="space-y-4">

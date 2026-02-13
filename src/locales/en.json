@@ -1,5 +1,5 @@
 {
-  "login_title": "FarmTycoon",
+  "login_title": "Pool Chicken",
   "tut_welcome_title": "Your First Chick!",
   "tut_welcome_text": "Congratulations, Farmer! You've just received a chick 🐣 to start your empire. Take good care of it!",
   "tut_growth_title": "The 30-Day Journey",
@@ -38,8 +38,8 @@
   "crisis_clean_title": "Dirty Coop!",
   "crisis_clean_text": "The coop is full of mess! Clean it now to keep your birds healthy.",
   "label_urgent": "Urgent",
-  "login_subtitle": "The ultimate farm simulator",
-  "email_placeholder": "E-mail",
+  "login_subtitle": "Profitable Chicken Farm",
+  "email_placeholder": "Email",
   "password_placeholder": "Password",
   "btn_login": "ENTER THE FARM",
   "btn_register": "CREATE ACCOUNT",

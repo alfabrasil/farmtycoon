@@ -90,7 +90,7 @@ const CommunityScreen = ({ onBack, onSimulateReferral, referralHistory, coopProg
             )}
           </div>
           <div>
-            <h3 className="font-black text-slate-800 mb-3 flex items-center gap-2 mt-6"><DollarSign size={20}/> {t('comm_sell_your_chickens')}</h3>
+            <h3 className="font-black text-slate-800 mb-3 flex items-center gap-2 mt-6"><DollarSign size={20}/> {t('comm_sell_chickens')}</h3>
             {chickens.length === 0 ? <p className="text-xs text-slate-400">{t('comm_no_chickens_to_sell')}</p> : (
               <div className="grid grid-cols-3 gap-2">
                 {chickens.map((chicken, index) => {

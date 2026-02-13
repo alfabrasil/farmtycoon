@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Timer, Trophy, Zap, Shield, Skull, Coins, ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react';
 import { playSound } from '../../../utils/audioSystem';
 import { MINIGAME_CONFIG } from '../../../data/gameConfig';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 const GRID_SIZE = 6;
 const CELL_SIZE = 100; // Porcentagem para o CSS grid
@@ -18,7 +19,15 @@ const ITEMS = {
 
 const HarvestEngine = ({ config, onFinish, showToast }) => {
   const { t } = useLanguage();
-  const passive = config.selectedChicken ? MINIGAME_CONFIG.HARVEST.PASSIVES[config.selectedChicken.type] : null;
+  
+  // Proteção contra config inválida
+  if (!config || !config.opponent) {
+    return <div className="flex items-center justify-center h-full text-white font-black animate-pulse">
+      <Zap className="mr-2" /> {t('loading_arena')}...
+    </div>;
+  }
+
+  const passive = config.selectedChicken ? (MINIGAME_CONFIG.HARVEST.PASSIVES[config.selectedChicken.type] || null) : null;
   const baseSpeed = passive?.bonus === 'SPEED_BASE' ? (1 + passive.value) : 1;
 
   const [player, setPlayer] = useState({ 
@@ -30,7 +39,7 @@ const HarvestEngine = ({ config, onFinish, showToast }) => {
   });
   const [opp, setOpp] = useState({ x: GRID_SIZE - 1, y: GRID_SIZE - 1, score: 0, speed: 1, shield: 0 });
   const [items, setItems] = useState([]);
-  const [timeLeft, setTimeLeft] = useState(config.time);
+  const [timeLeft, setTimeLeft] = useState(config.time || 60);
   const [isReady, setIsReady] = useState(false);
   const [countdown, setCountdown] = useState(3);
 
@@ -194,7 +203,7 @@ const HarvestEngine = ({ config, onFinish, showToast }) => {
 
       return { ...prev, x: nx, y: ny };
     });
-  }, [isReady, timeLeft, opp, items, player.speed]);
+  }, [isReady, timeLeft, opp, items, player.speed, passive, baseSpeed, showToast, t]);
 
   // Keyboard Controls
   useEffect(() => {
@@ -213,7 +222,7 @@ const HarvestEngine = ({ config, onFinish, showToast }) => {
 
   // --- BOT AI ---
   useEffect(() => {
-    if (!isReady || !config.opponent.isBot) return;
+    if (!isReady || !config?.opponent?.isBot) return;
 
     const botSpeed = config.difficulty === 'EASY' ? 1200 : config.difficulty === 'MEDIUM' ? 800 : 500;
     
@@ -279,7 +288,7 @@ const HarvestEngine = ({ config, onFinish, showToast }) => {
     }, botSpeed);
 
     return () => clearInterval(botInterval);
-  }, [isReady, config.difficulty, config.opponent.isBot]);
+  }, [isReady, config?.difficulty, config?.opponent?.isBot]);
 
   return (
     <div className="flex flex-col h-full bg-slate-900 p-4 select-none">
@@ -292,7 +301,7 @@ const HarvestEngine = ({ config, onFinish, showToast }) => {
           </div>
           <div className="w-px h-8 bg-white/20" />
           <div className="text-center">
-            <div className="text-[10px] font-black text-red-400 uppercase tracking-widest">{config.opponent.name}</div>
+            <div className="text-[10px] font-black text-red-400 uppercase tracking-widest">{config.opponent?.name || 'Bot'}</div>
             <div className="text-2xl font-black text-white">{opp.score}</div>
           </div>
         </div>
@@ -369,7 +378,7 @@ const HarvestEngine = ({ config, onFinish, showToast }) => {
                   <div className="absolute inset-0 flex items-center justify-center z-20 transition-all duration-150">
                     <div className="relative">
                       <div className="text-4xl animate-bounce">🐓</div>
-                      <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-red-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full border border-white whitespace-nowrap shadow-sm truncate max-w-[40px]">{config.opponent.name}</div>
+                      <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-red-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full border border-white whitespace-nowrap shadow-sm truncate max-w-[40px]">{config.opponent?.name || 'Bot'}</div>
                     </div>
                   </div>
                 )}

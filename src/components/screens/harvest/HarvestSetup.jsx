@@ -33,16 +33,34 @@ const HarvestSetup = ({ onBack, onConfirm, balance, chickens = [] }) => {
   ];
 
   const handleConfirm = () => {
-    const opponent = mode === 'BOT' 
-      ? bots.find(b => b.difficulty === difficulty) 
-      : pvpMocks.find(p => p.bet === bet) || pvpMocks[0];
+    // Busca oponente com fallback de segurança
+    let opponent = null;
+    
+    if (mode === 'BOT') {
+      opponent = bots.find(b => b.difficulty === difficulty) || bots[0];
+    } else {
+      opponent = pvpMocks.find(p => p.bet === bet) || pvpMocks[0];
+    }
+
+    // Se ainda assim falhar (não deveria), cria um oponente genérico
+    if (!opponent) {
+      opponent = { id: 'fallback_bot', name: 'Bot Reserva', avatar: '🤖', difficulty: 'EASY', isBot: true };
+    }
+
+    // Valida se tem galinha selecionada, senão pega a primeira disponível ou cria uma mock
+    const finalChicken = selectedChicken || (chickens && chickens.length > 0 ? chickens[0] : { 
+      id: 'mock_chicken', 
+      type: 'GRANJA', 
+      name: 'Galinha Padrão', 
+      icon: '🐔' 
+    });
 
     onConfirm({
       bet,
       difficulty,
       time,
       opponent: { ...opponent, isBot: mode === 'BOT' },
-      selectedChicken
+      selectedChicken: finalChicken
     });
   };
 
@@ -74,36 +92,45 @@ const HarvestSetup = ({ onBack, onConfirm, balance, chickens = [] }) => {
         <div>
           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">{t('harvest_choose_chicken')}</label>
           <div className="flex gap-3 overflow-x-auto pb-4 px-1 scrollbar-hide">
-            {chickens.map(chicken => {
-              const passive = MINIGAME_CONFIG.HARVEST.PASSIVES[chicken.type];
-              const isSelected = selectedChicken?.id === chicken.id;
-              
-              return (
-                <button
-                  key={chicken.id}
-                  onClick={() => { setSelectedChicken(chicken); playSound('pop'); }}
-                  className={`min-w-[140px] p-4 rounded-3xl border-4 transition-all relative ${
-                    isSelected ? 'bg-white border-green-500 shadow-xl scale-105' : 'bg-slate-50 border-transparent opacity-60'
-                  }`}
-                >
-                  {isSelected && <div className="absolute -top-2 -right-2 bg-green-500 text-white rounded-full p-1 shadow-lg"><CheckCircle2 size={16} /></div>}
-                  <div className="text-3xl mb-2">{chicken.icon || '🐔'}</div>
-                  <div className="font-black text-slate-800 text-xs truncate mb-1">
-                    {chicken.nameKey ? t(chicken.nameKey, chicken.nameParams) : chicken.name}
-                  </div>
-                  {passive && (
-                    <div className="bg-slate-100 rounded-xl p-2 mt-2">
-                      <div className="flex items-center gap-1 text-[8px] font-black text-green-600 uppercase">
-                        {passive.icon} {t(passive.labelKey)}
-                      </div>
-                      <div className="text-[8px] text-slate-500 font-bold leading-tight mt-0.5">
-                        {t(passive.descKey)}
-                      </div>
+            {(!chickens || chickens.length === 0) ? (
+              <div className="text-slate-400 text-sm italic p-4 bg-slate-100 rounded-xl w-full text-center">
+                {t('harvest_no_chickens')}
+              </div>
+            ) : (
+              chickens.map(chicken => {
+                if (!chicken) return null; // Proteção contra item nulo
+                
+                // Tenta buscar passiva com fallback para evitar crash se o tipo não existir
+                const passive = MINIGAME_CONFIG.HARVEST.PASSIVES[chicken.type] || null;
+                const isSelected = selectedChicken?.id === chicken.id;
+                
+                return (
+                  <button
+                    key={chicken.id}
+                    onClick={() => { setSelectedChicken(chicken); playSound('pop'); }}
+                    className={`min-w-[140px] p-4 rounded-3xl border-4 transition-all relative ${
+                      isSelected ? 'bg-white border-green-500 shadow-xl scale-105' : 'bg-slate-50 border-transparent opacity-60'
+                    }`}
+                  >
+                    {isSelected && <div className="absolute -top-2 -right-2 bg-green-500 text-white rounded-full p-1 shadow-lg"><CheckCircle2 size={16} /></div>}
+                    <div className="text-3xl mb-2">{chicken.icon || '🐔'}</div>
+                    <div className="font-black text-slate-800 text-xs truncate mb-1">
+                      {chicken.nameKey ? t(chicken.nameKey, chicken.nameParams) : chicken.name}
                     </div>
-                  )}
-                </button>
-              );
-            })}
+                    {passive && (
+                      <div className="bg-slate-100 rounded-xl p-2 mt-2">
+                        <div className="flex items-center gap-1 text-[8px] font-black text-green-600 uppercase">
+                          {passive.icon} {t(passive.labelKey)}
+                        </div>
+                        <div className="text-[8px] text-slate-500 font-bold leading-tight mt-0.5">
+                          {t(passive.descKey)}
+                        </div>
+                      </div>
+                    )}
+                  </button>
+                );
+              })
+            )}
           </div>
         </div>
 

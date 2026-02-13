@@ -77,7 +77,13 @@ const ChickenCard = ({ chicken, onFeed, onCollect, onHeal, onClean, onCustomize,
   
   const renderAvatar = () => {
     // if (isSick) return <div className="text-6xl animate-pulse grayscale brightness-50 contrast-125">🤢</div>; // REMOVIDO: Usar Sprite Layered
-    if (chicken.type === 'GRANJA' && !isAdult) return <div className="text-6xl animate-bounce">🐣</div>;
+    if (chicken.type === 'GRANJA' && !isAdult) {
+      return (
+        <div className="w-20 h-20 animate-bounce">
+          <img src="/assets/logo/logo_pool_chicken.svg" alt="Baby Chicken" className="w-full h-full object-contain drop-shadow-md" />
+        </div>
+      );
+    }
     
     // Visuais especiais para Mutantes/Cyber/Variantes
     if (variant) {

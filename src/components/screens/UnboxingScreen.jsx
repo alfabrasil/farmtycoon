@@ -19,7 +19,9 @@ const UnboxingScreen = ({ onFinish }) => {
           </div>
         ) : (
           <div className="bg-white p-8 rounded-3xl shadow-2xl max-w-sm animate-in zoom-in-50 border-b-8 border-slate-200">
-            <div className="text-6xl mb-4 animate-bounce">🐣</div>
+            <div className="w-24 h-24 mx-auto mb-4 animate-bounce">
+              <img src="/assets/logo/logo_pool_chicken.svg" alt="Chicken" className="w-full h-full object-contain" />
+            </div>
             <h2 className="text-2xl font-black text-slate-800 mb-2">{t('unboxing_chicken_received')}</h2>
             <p className="text-slate-500 text-sm mb-6" dangerouslySetInnerHTML={{ __html: t('unboxing_chicken_desc') }}></p>
             <button onClick={() => { playSound('success'); onFinish(); }} className="w-full bg-blue-500 text-white py-3 rounded-xl font-black shadow-md border-b-4 border-blue-700 active:border-b-0 active:translate-y-1">
