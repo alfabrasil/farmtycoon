@@ -35,9 +35,17 @@ const HarvestEngine = ({ config, onFinish, showToast }) => {
     y: 0, 
     score: 0, 
     speed: baseSpeed, 
-    shield: passive?.bonus === 'SHIELD_ONCE' ? 1 : 0 
+    shield: passive?.bonus === 'SHIELD_ONCE' ? 1 : 0,
+    facing: 'RIGHT' // RIGHT, LEFT
   });
-  const [opp, setOpp] = useState({ x: GRID_SIZE - 1, y: GRID_SIZE - 1, score: 0, speed: 1, shield: 0 });
+  const [opp, setOpp] = useState({ 
+    x: GRID_SIZE - 1, 
+    y: GRID_SIZE - 1, 
+    score: 0, 
+    speed: 1, 
+    shield: 0,
+    facing: 'LEFT' // RIGHT, LEFT
+  });
   const [items, setItems] = useState([]);
   const [timeLeft, setTimeLeft] = useState(config.time || 60);
   const [isReady, setIsReady] = useState(false);
@@ -137,6 +145,10 @@ const HarvestEngine = ({ config, onFinish, showToast }) => {
     setPlayer(prev => {
       let nx = prev.x + dx;
       let ny = prev.y + dy;
+      
+      let newFacing = prev.facing;
+      if (dx > 0) newFacing = 'RIGHT';
+      if (dx < 0) newFacing = 'LEFT';
 
       // Habilidade MUTANTE: Teletransporte (Bordas)
       if (passive?.bonus === 'TELEPORT') {
@@ -163,7 +175,7 @@ const HarvestEngine = ({ config, onFinish, showToast }) => {
           setOpp(o => ({ ...o, x: finalPushX, y: finalPushY }));
           playSound('pop');
         }
-        return prev;
+        return { ...prev, facing: newFacing }; // Bloqueado, mas vira para o lado
       }
 
       // Check item collection
@@ -181,7 +193,7 @@ const HarvestEngine = ({ config, onFinish, showToast }) => {
           newScore = prev.score; // Não perde pontos
           playSound('achievement');
           showToast(t('harvest_msg_shield_protected'), "info");
-          return { ...prev, x: nx, y: ny, score: newScore, shield: newShield };
+          return { ...prev, x: nx, y: ny, score: newScore, shield: newShield, facing: newFacing };
         }
 
         if (itemAtPos.effect === 'SPEED') {
@@ -198,10 +210,10 @@ const HarvestEngine = ({ config, onFinish, showToast }) => {
           playSound('error');
         }
 
-        return { ...prev, x: nx, y: ny, score: newScore, speed: newSpeed, shield: newShield };
+        return { ...prev, x: nx, y: ny, score: newScore, speed: newSpeed, shield: newShield, facing: newFacing };
       }
 
-      return { ...prev, x: nx, y: ny };
+      return { ...prev, x: nx, y: ny, facing: newFacing };
     });
   }, [isReady, timeLeft, opp, items, player.speed, passive, baseSpeed, showToast, t]);
 
@@ -327,64 +339,100 @@ const HarvestEngine = ({ config, onFinish, showToast }) => {
 
       {/* Grid de Jogo */}
       <div className="flex-1 flex items-center justify-center relative">
+        {/* Arena Grid */}
         <div 
-          className="grid gap-1 bg-slate-800 p-2 rounded-3xl shadow-2xl border-4 border-slate-700"
+          className="grid gap-1 relative rounded-xl overflow-hidden bg-slate-800 border-4 border-slate-700 shadow-inner"
           style={{ 
             gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)`,
+            gridTemplateRows: `repeat(${GRID_SIZE}, 1fr)`,
             width: 'min(90vw, 400px)',
             height: 'min(90vw, 400px)'
           }}
         >
-          {Array(GRID_SIZE * GRID_SIZE).fill(0).map((_, i) => {
+          {/* Render Grid Cells & Items */}
+          {Array.from({ length: GRID_SIZE * GRID_SIZE }).map((_, i) => {
             const x = i % GRID_SIZE;
             const y = Math.floor(i / GRID_SIZE);
-            const isPlayer = player.x === x && player.y === y;
-            const isOpp = opp.x === x && opp.y === y;
+            const isAlt = (x + y) % 2 === 0;
+
             const item = items.find(it => it.x === x && it.y === y);
 
             // Habilidade CAIPIRA: Detecta itens próximos (distância 1)
             const isNearItem = passive?.bonus === 'VISION' && item && (Math.abs(player.x - x) + Math.abs(player.y - y) <= 1);
+            const cellClass = isNearItem ? 'ring-2 ring-amber-400/50 bg-amber-900/20' : (isAlt ? 'bg-white/5' : 'bg-white/10');
 
             return (
-              <div 
-                key={i} 
-                className={`relative bg-slate-700/50 rounded-lg flex items-center justify-center overflow-hidden transition-all ${isNearItem ? 'ring-2 ring-amber-400/50 bg-amber-900/20' : ''}`}
-              >
-                {/* Grama/Piso */}
-                <div className="absolute inset-0 opacity-10 pointer-events-none">
-                  <div className="w-full h-full border border-white/5" />
-                </div>
-
-                {/* Itens */}
+              <div key={i} className={`rounded-lg border border-white/5 relative flex items-center justify-center transition-colors duration-300 ${cellClass}`}>
+                
+                {/* Items */}
                 {item && (
-                  <div className="text-3xl animate-in zoom-in duration-300 drop-shadow-lg z-10">
-                    {item.icon}
-                  </div>
-                )}
-
-                {/* Personagens */}
-                {isPlayer && (
-                  <div className="absolute inset-0 flex items-center justify-center z-20 transition-all duration-150">
-                    <div className="relative">
-                      <div className="text-4xl animate-bounce">🐔</div>
-                      {player.speed > 1 && <div className="absolute -bottom-1 -right-1 text-xl animate-pulse">🌶️</div>}
-                      {player.shield > 0 && <div className="absolute -top-1 -left-1 text-xl animate-spin">🛡️</div>}
-                      <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-green-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full border border-white whitespace-nowrap shadow-sm uppercase">{t('harvest_you')}</div>
-                    </div>
-                  </div>
-                )}
-
-                {isOpp && (
-                  <div className="absolute inset-0 flex items-center justify-center z-20 transition-all duration-150">
-                    <div className="relative">
-                      <div className="text-4xl animate-bounce">🐓</div>
-                      <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-red-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full border border-white whitespace-nowrap shadow-sm truncate max-w-[40px]">{config.opponent?.name || 'Bot'}</div>
-                    </div>
+                  <div className="absolute inset-0 flex items-center justify-center z-10 animate-in zoom-in duration-300">
+                     <div className={`text-3xl filter drop-shadow-lg ${item.points > 0 ? 'animate-bounce' : ''}`}>
+                      {item.icon}
+                     </div>
                   </div>
                 )}
               </div>
             );
           })}
+
+          {/* Characters Layer (Movimento Fluido) */}
+          {/* Player */}
+          <div 
+            className="absolute z-20 transition-all duration-200 ease-out flex items-center justify-center pointer-events-none"
+            style={{
+              width: `${100/GRID_SIZE}%`,
+              height: `${100/GRID_SIZE}%`,
+              left: `${player.x * (100/GRID_SIZE)}%`,
+              top: `${player.y * (100/GRID_SIZE)}%`
+            }}
+          >
+            <div className="relative transition-transform duration-200" style={{ transform: player.facing === 'LEFT' ? 'scaleX(-1)' : 'none' }}>
+              {config.playerAvatar ? (
+                <img src={config.playerAvatar} alt="Player" className="w-14 h-14 object-contain animate-bounce drop-shadow-md" />
+              ) : (
+                <div className="text-4xl animate-bounce">🐔</div>
+              )}
+              {player.speed > 1 && <div className="absolute -bottom-1 -right-1 text-xl animate-pulse">🌶️</div>}
+              {player.shield > 0 && <div className="absolute -top-1 -left-1 text-xl animate-spin">🛡️</div>}
+              
+              {/* Tag Nome (Sempre desvirada) */}
+              <div 
+                className="absolute -top-8 left-1/2 -translate-x-1/2 bg-green-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full border border-white whitespace-nowrap shadow-sm uppercase"
+                style={{ transform: player.facing === 'LEFT' ? 'scaleX(-1)' : 'none' }}
+              >
+                {t('harvest_you')}
+              </div>
+            </div>
+          </div>
+
+          {/* Opponent */}
+          <div 
+            className="absolute z-20 transition-all duration-200 ease-out flex items-center justify-center pointer-events-none"
+            style={{
+              width: `${100/GRID_SIZE}%`,
+              height: `${100/GRID_SIZE}%`,
+              left: `${opp.x * (100/GRID_SIZE)}%`,
+              top: `${opp.y * (100/GRID_SIZE)}%`
+            }}
+          >
+            <div className="relative transition-transform duration-200" style={{ transform: opp.facing === 'LEFT' ? 'scaleX(-1)' : 'none' }}>
+              {config.opponentAvatar ? (
+                <img src={config.opponentAvatar} alt="Opponent" className="w-14 h-14 object-contain animate-bounce drop-shadow-md" />
+              ) : (
+                <div className="text-4xl animate-bounce">🐓</div>
+              )}
+              
+              {/* Tag Nome (Sempre desvirada) */}
+              <div 
+                className="absolute -top-8 left-1/2 -translate-x-1/2 bg-red-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full border border-white whitespace-nowrap shadow-sm truncate max-w-[40px]"
+                style={{ transform: opp.facing === 'LEFT' ? 'scaleX(-1)' : 'none' }}
+              >
+                {config.opponent?.name || 'Bot'}
+              </div>
+            </div>
+          </div>
+
         </div>
 
         {/* Countdown Overlay */}

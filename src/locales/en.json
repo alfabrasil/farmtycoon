@@ -712,6 +712,8 @@
   "referral_level_5": "5th Level",
   "auction_expires_h": "{0}h",
   "auction_expires_m": "{0}m",
+  "harvest_choose_color": "CHOOSE YOUR COLOR",
+  "harvest_support_bonus": "SUPPORT BONUS (FROM YOUR FARM)",
   "harvest_bot_1": "ChickyBot",
   "harvest_bot_2": "FastChick",
   "harvest_bot_3": "HarvestMaster",

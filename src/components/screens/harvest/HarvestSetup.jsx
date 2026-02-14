@@ -11,6 +11,15 @@ const HarvestSetup = ({ onBack, onConfirm, balance, chickens = [] }) => {
   const [time, setTime] = useState(120);
   const [mode, setMode] = useState('BOT'); // BOT, PVP_MOCK
   const [selectedChicken, setSelectedChicken] = useState((chickens && chickens.length > 0) ? chickens[0] : null);
+  
+  // AVATAR SELECTION
+  const avatars = [
+    { id: 'red', icon: '/assets/booster/rooster_red.svg', color: 'bg-red-100 border-red-500' },
+    { id: 'blue', icon: '/assets/booster/rooster_blue.svg', color: 'bg-blue-100 border-blue-500' },
+    { id: 'green', icon: '/assets/booster/rooster_green.svg', color: 'bg-green-100 border-green-500' },
+    { id: 'yellow', icon: '/assets/booster/rooster_yellow.svg', color: 'bg-yellow-100 border-yellow-500' }
+  ];
+  const [selectedAvatar, setSelectedAvatar] = useState(avatars[0]);
 
   const bets = [10, 50, 100, 250, 500];
   const difficulties = [
@@ -55,12 +64,18 @@ const HarvestSetup = ({ onBack, onConfirm, balance, chickens = [] }) => {
       icon: '🐔' 
     });
 
+    // Escolhe avatar do oponente (qualquer um EXCETO o do player)
+    const availableOpponentAvatars = avatars.filter(a => a.id !== selectedAvatar.id);
+    const opponentAvatar = availableOpponentAvatars[Math.floor(Math.random() * availableOpponentAvatars.length)];
+
     onConfirm({
       bet,
       difficulty,
       time,
       opponent: { ...opponent, isBot: mode === 'BOT' },
-      selectedChicken: finalChicken
+      selectedChicken: finalChicken,
+      playerAvatar: selectedAvatar.icon,
+      opponentAvatar: opponentAvatar.icon
     });
   };
 
@@ -88,19 +103,34 @@ const HarvestSetup = ({ onBack, onConfirm, balance, chickens = [] }) => {
       </div>
 
       <div className="space-y-8">
-        {/* Chicken Selection - NOVO: Habilidades Passivas */}
+        {/* Avatar Selection */}
         <div>
-          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">{t('harvest_choose_chicken')}</label>
-          <div className="flex gap-3 overflow-x-auto pb-4 px-1 scrollbar-hide">
+           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">{t('harvest_choose_color')}</label>
+           <div className="flex gap-4 justify-center bg-white p-4 rounded-3xl shadow-sm border border-slate-100">
+             {avatars.map(av => (
+               <button
+                 key={av.id}
+                 onClick={() => { setSelectedAvatar(av); playSound('pop'); }}
+                 className={`w-16 h-16 rounded-full border-4 flex items-center justify-center transition-all ${selectedAvatar.id === av.id ? `${av.color} scale-110 shadow-lg ring-2 ring-offset-2 ring-slate-300` : 'bg-slate-100 border-slate-200 grayscale opacity-50 hover:grayscale-0 hover:opacity-100'}`}
+               >
+                 <img src={av.icon} alt={av.id} className="w-12 h-12 object-contain drop-shadow-sm" />
+               </button>
+             ))}
+           </div>
+        </div>
+
+        {/* Chicken Selection - NOVO: Habilidades Passivas (Compacto) */}
+        <div>
+          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">{t('harvest_support_bonus')}</label>
+          <div className="flex gap-2 overflow-x-auto pb-2 px-1 [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-track]:bg-slate-100 [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-slate-400">
             {(!chickens || chickens.length === 0) ? (
-              <div className="text-slate-400 text-sm italic p-4 bg-slate-100 rounded-xl w-full text-center">
+              <div className="text-slate-400 text-xs italic p-3 bg-slate-100 rounded-xl w-full text-center">
                 {t('harvest_no_chickens')}
               </div>
             ) : (
               chickens.map(chicken => {
-                if (!chicken) return null; // Proteção contra item nulo
+                if (!chicken) return null;
                 
-                // Tenta buscar passiva com fallback para evitar crash se o tipo não existir
                 const passive = MINIGAME_CONFIG.HARVEST.PASSIVES[chicken.type] || null;
                 const isSelected = selectedChicken?.id === chicken.id;
                 
@@ -108,24 +138,35 @@ const HarvestSetup = ({ onBack, onConfirm, balance, chickens = [] }) => {
                   <button
                     key={chicken.id}
                     onClick={() => { setSelectedChicken(chicken); playSound('pop'); }}
-                    className={`min-w-[140px] p-4 rounded-3xl border-4 transition-all relative ${
-                      isSelected ? 'bg-white border-green-500 shadow-xl scale-105' : 'bg-slate-50 border-transparent opacity-60'
+                    className={`min-w-[100px] p-2 rounded-2xl border-2 transition-all relative flex flex-col items-center gap-1 ${
+                      isSelected ? 'bg-green-50 border-green-500 shadow-md scale-95' : 'bg-white border-slate-100 opacity-70 hover:opacity-100'
                     }`}
                   >
-                    {isSelected && <div className="absolute -top-2 -right-2 bg-green-500 text-white rounded-full p-1 shadow-lg"><CheckCircle2 size={16} /></div>}
-                    <div className="text-3xl mb-2">{chicken.icon || '🐔'}</div>
-                    <div className="font-black text-slate-800 text-xs truncate mb-1">
-                      {chicken.nameKey ? t(chicken.nameKey, chicken.nameParams) : chicken.name}
-                    </div>
-                    {passive && (
-                      <div className="bg-slate-100 rounded-xl p-2 mt-2">
-                        <div className="flex items-center gap-1 text-[8px] font-black text-green-600 uppercase">
-                          {passive.icon} {t(passive.labelKey)}
+                    {isSelected && <div className="absolute top-1 right-1 text-green-500"><CheckCircle2 size={12} /></div>}
+                    
+                    {/* Destaque para a Passiva */}
+                    {passive ? (
+                      <>
+                        <div className="bg-slate-100 p-1.5 rounded-full mb-1">
+                          <span className="text-xl">{passive.icon}</span>
                         </div>
-                        <div className="text-[8px] text-slate-500 font-bold leading-tight mt-0.5">
+                        <div className="font-black text-[9px] text-slate-700 uppercase leading-tight text-center">
+                          {t(passive.labelKey)}
+                        </div>
+                        <div className="text-[8px] text-slate-400 font-bold leading-tight text-center line-clamp-2 w-full">
                           {t(passive.descKey)}
                         </div>
-                      </div>
+                        <div className="mt-1 pt-1 border-t border-slate-100 w-full flex items-center justify-center gap-1 opacity-50">
+                           <span className="text-[8px]">{chicken.icon}</span>
+                           <span className="text-[7px] truncate max-w-[50px]">{chicken.name}</span>
+                        </div>
+                      </>
+                    ) : (
+                       // Fallback sem passiva
+                       <>
+                         <div className="text-xl">{chicken.icon}</div>
+                         <div className="text-[9px] text-slate-500">Sem Bônus</div>
+                       </>
                     )}
                   </button>
                 );

@@ -178,9 +178,13 @@ const ChickenChaseScreen = ({ onBack, balance, setBalance, showToast }) => {
       ) : (
         <div className="w-full h-full flex items-center justify-center animate-in zoom-in duration-500">
           {door.content === 'CHICKEN' ? (
-            <div className="relative">
-              <span className="text-5xl animate-bounce absolute -top-4 -left-3">🐔</span>
-              <span className="text-5xl animate-ping absolute -top-4 -left-3 opacity-30">✨</span>
+            <div className="relative flex items-center justify-center w-full h-full">
+              <img 
+                src="/assets/logo/logo_pool_chicken.svg" 
+                alt="Chicken" 
+                className="w-16 h-16 object-contain animate-bounce drop-shadow-md"
+              />
+              <span className="text-5xl animate-ping absolute opacity-30">✨</span>
             </div>
           ) : (
             <span className="text-5xl opacity-80 drop-shadow-md animate-pulse text-slate-400">🕸️</span>

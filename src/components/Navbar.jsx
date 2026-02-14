@@ -1,7 +1,7 @@
 import React from 'react';
 import { 
   Sparkles, CloudRain, Sun, Bot, Trash2, Landmark, Dna, Settings as SettingsIcon, Dices, 
-  Users2, ClipboardList, Warehouse, ShoppingBag, Gamepad2, AlertCircle, HelpCircle, Info
+  Users2, ClipboardList, Warehouse, ShoppingBag, Gamepad2, AlertCircle, HelpCircle, Info, Zap
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { playSound } from '../utils/audioSystem';
@@ -92,8 +92,17 @@ const Navbar = ({ balance, dayCount, onViewChange, currentView, level, xp, xpToN
 
         <div onClick={() => { playSound('pop'); onViewChange('SETTINGS'); }} className={`p-2 rounded-full border-b-4 active:border-b-0 active:translate-y-1 transition-all cursor-pointer shadow-sm shrink-0 ${currentView === 'SETTINGS' ? 'bg-slate-200 text-slate-600 border-slate-400' : 'bg-white text-slate-400 border-slate-200 hover:text-slate-600'}`} title={t('settings')}><SettingsIcon size={20} /></div>
         <div onClick={() => { playSound('pop'); onViewChange('CHASE'); }} className={`p-2 rounded-full border-b-4 active:border-b-0 active:translate-y-1 transition-all cursor-pointer shadow-sm shrink-0 ${currentView === 'CHASE' ? 'bg-purple-100 text-purple-600 border-purple-300' : 'bg-white text-slate-400 border-slate-200 hover:text-purple-500'}`} title={t('view_chase')}><Gamepad2 size={20} /></div>
-        <div id="tut-nav-wheel" onClick={() => { playSound('pop'); onViewChange('WHEEL'); }} className={`p-2 rounded-full border-b-4 active:border-b-0 active:translate-y-1 transition-all cursor-pointer shadow-sm shrink-0 ${currentView === 'WHEEL' ? 'bg-purple-50 text-purple-400 border-purple-200' : 'bg-white text-slate-400 border-slate-200 hover:text-purple-400'}`} title={t('wheel_title')}><Dices size={20} /></div>
-        <div onClick={() => { playSound('pop'); onViewChange('COMMUNITY'); }} className={`p-2 rounded-full border-b-4 active:border-b-0 active:translate-y-1 transition-all cursor-pointer shadow-sm shrink-0 ${currentView === 'COMMUNITY' ? 'bg-blue-100 text-blue-600 border-blue-300' : 'bg-white text-slate-400 border-slate-200 hover:text-blue-500'}`} title={t('view_community')}><Users2 size={20} /></div>
+        <div id="tut-nav-wheel" onClick={() => { playSound('pop'); onViewChange('WHEEL'); }} className={`p-2 rounded-full border-b-4 active:border-b-0 active:translate-y-1 transition-all cursor-pointer shadow-sm shrink-0 ${currentView === 'WHEEL' ? 'bg-purple-50 text-purple-400 border-purple-200' : 'bg-white text-slate-400 border-slate-200 hover:text-purple-400'}`} title={t('nav_wheel')}>
+          <Dices size={20} />
+        </div>
+
+        <div onClick={() => { playSound('pop'); onViewChange('HARVEST'); }} className={`p-2 rounded-full border-b-4 active:border-b-0 active:translate-y-1 transition-all cursor-pointer shadow-sm shrink-0 ${currentView === 'HARVEST' ? 'bg-green-100 text-green-600 border-green-300' : 'bg-white text-slate-400 border-slate-200 hover:text-green-500'}`} title={t('nav_harvest_pvp')}>
+          <Zap size={20} />
+        </div>
+
+        <div onClick={() => { playSound('pop'); onViewChange('COMMUNITY'); }} className={`p-2 rounded-full border-b-4 active:border-b-0 active:translate-y-1 transition-all cursor-pointer shadow-sm shrink-0 ${currentView === 'COMMUNITY' ? 'bg-blue-100 text-blue-600 border-blue-300' : 'bg-white text-slate-400 border-slate-200 hover:text-blue-500'}`} title={t('nav_community')}>
+          <Users2 size={20} />
+        </div>
         <div onClick={() => { playSound('pop'); openQuests(); }} className="relative p-2 rounded-full border-b-4 bg-white text-slate-400 border-slate-200 hover:text-blue-500 cursor-pointer shadow-sm active:border-b-0 active:translate-y-1 shrink-0" title={t('quests')}>
           <ClipboardList size={20} />
           {pendingRewards && <div className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-pulse"></div>}

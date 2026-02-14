@@ -712,6 +712,8 @@
   "referral_level_5": "5º Nivel",
   "auction_expires_h": "{0}h",
   "auction_expires_m": "{0}m",
+  "harvest_choose_color": "ELIGE TU COLOR",
+  "harvest_support_bonus": "BONO DE APOYO (DE TU GRANJA)",
   "harvest_bot_1": "PollitoBot",
   "harvest_bot_2": "PollitoRápido",
   "harvest_bot_3": "MaestroCosecha",

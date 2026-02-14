@@ -725,6 +725,8 @@
   "referral_level_5": "5º Nível",
   "auction_expires_h": "{0}h",
   "auction_expires_m": "{0}m",
+  "harvest_choose_color": "ESCOLHA SUA COR",
+  "harvest_support_bonus": "BÔNUS DE SUPORTE (DA SUA GRANJA)",
   "harvest_bot_1": "GalinhoBot",
   "harvest_bot_2": "PintinhoRápido",
   "harvest_bot_3": "MestreColheita",
