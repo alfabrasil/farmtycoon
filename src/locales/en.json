@@ -534,7 +534,7 @@
   "chicken_state_happy": "HAPPY",
   "chicken_action_clean": "Clean mess",
   "chicken_action_stopped": "STOPPED",
-  "chicken_action_already_collected": "ALREADY COLLECTED",
+  "chicken_action_already_collected": "COLLECTED",
   "chicken_action_collect": "COLLECT",
   "chicken_action_use": "USE ({0})",
   "chicken_action_no_item": "NO ITEM",

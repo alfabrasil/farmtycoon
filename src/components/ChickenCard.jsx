@@ -123,8 +123,24 @@ const ChickenCard = ({ chicken, onFeed, onCollect, onHeal, onClean, onCustomize,
 
         {hasPoop && !isSick && (<button onClick={(e) => { e.stopPropagation(); onClean(chicken, e); playSound('squish'); }} className="absolute bottom-2 right-2 text-2xl hover:scale-125 transition-transform cursor-pointer animate-bounce z-10" title={t('chicken_action_clean')}>💩</button>)}{isHungry && !isSick && <div className="absolute top-2 right-2 bg-white rounded-full p-1.5 border border-black shadow-lg animate-bounce"><Droplets size={14} className="text-blue-500" /></div>}{!isAdult && (<div className="absolute bottom-0 left-0 w-full h-1.5 bg-black/20"><div className="h-full bg-green-500" style={{ width: `${Math.min((chicken.age_days / (chicken.adult_threshold || 30)) * 100, 100)}%` }}></div></div>)}</div>
       <div className="grid grid-cols-2 gap-2 mt-1">
-        <button onClick={handleCollectWithMood} disabled={isHungry || !isAdult || isSick || hasLaidToday} className="bg-green-500 hover:bg-green-600 disabled:bg-slate-300 disabled:border-slate-400 disabled:text-slate-500 text-white border-b-4 border-green-700 active:border-b-0 active:translate-y-1 rounded-xl py-2 font-black text-xs flex items-center justify-center gap-1 transition-all">
-          {isSick ? <span className="flex items-center gap-1"><AlertTriangle size={12}/> {t('chicken_action_stopped')}</span> : hasLaidToday ? <span className="flex items-center gap-1"><CheckSquare size={12}/> {t('chicken_action_already_collected')}</span> : <><Egg size={14}/> {t('chicken_action_collect')}</>}
+        <button
+          onClick={handleCollectWithMood}
+          disabled={isHungry || !isAdult || isSick || hasLaidToday}
+          className="bg-green-500 hover:bg-green-600 disabled:bg-slate-300 disabled:border-slate-400 disabled:text-slate-500 text-white border-b-4 border-green-700 active:border-b-0 active:translate-y-1 rounded-xl py-2 font-black text-xs flex items-center justify-center gap-1 transition-all"
+        >
+          {isSick ? (
+            <span className="flex items-center gap-1">
+              <AlertTriangle size={12} /> {t('chicken_action_stopped')}
+            </span>
+          ) : hasLaidToday ? (
+            <span className="flex items-center justify-center gap-1 text-[10px] leading-none whitespace-nowrap">
+              <CheckSquare size={12} /> {t('chicken_action_already_collected')}
+            </span>
+          ) : (
+            <>
+              <Egg size={14} /> {t('chicken_action_collect')}
+            </>
+          )}
         </button>
         {isSick ? (<button onClick={(e) => { onHeal(chicken); playSound('pop'); }} disabled={!hasVaccine} className={`text-white border-b-4 active:border-b-0 active:translate-y-1 rounded-xl py-2 font-black text-xs flex items-center justify-center gap-1 transition-all ${hasVaccine ? 'bg-red-500 hover:bg-red-600 border-red-700 animate-pulse' : 'bg-slate-300 border-slate-400'}`}><Syringe size={14}/> {hasVaccine ? t('chicken_action_use', [1]) : t('chicken_action_no_item')}</button>) : (<button onClick={(e) => { onFeed(chicken); playSound('pop'); }} disabled={!hasFeed && !isHungry} className={`text-white border-b-4 active:border-b-0 active:translate-y-1 rounded-xl py-2 font-black text-xs flex items-center justify-center gap-1 transition-all ${!isHungry ? 'bg-slate-300 border-slate-400 cursor-default opacity-50' : hasFeed ? 'bg-blue-400 hover:bg-blue-500 border-blue-700' : 'bg-red-400 border-red-700'}`}><Droplets size={14}/> {hasFeed ? t('chicken_action_feed_cost', [config.feedConsumption]) : t('chicken_action_buy')}</button>)}
       </div>

@@ -8,8 +8,8 @@ const QuestsModal = ({ quests, onClose, onClaim }) => {
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in zoom-in duration-300">
       <div className="bg-white rounded-3xl p-6 w-full max-w-sm relative border-b-8 border-slate-200 shadow-2xl">
         <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><X size={24}/></button>
-        <h2 className="text-2xl font-black text-slate-800 mb-1 flex items-center gap-2"><ClipboardList className="text-blue-500"/> {t('quest_title')}</h2>
-        <p className="text-slate-500 text-xs mb-6">{t('quest_subtitle')}</p>
+        <h2 className="text-2xl font-black text-slate-800 mb-1 flex items-center gap-2"><ClipboardList className="text-blue-500"/> {t('quest_modal_title')}</h2>
+        <p className="text-slate-500 text-xs mb-6">{t('quest_modal_subtitle')}</p>
         
         <div className="space-y-3">
           {quests.map(q => (
@@ -26,12 +26,12 @@ const QuestsModal = ({ quests, onClose, onClaim }) => {
               </div>
               {q.completed && !q.claimed && (
                 <button onClick={() => onClaim(q.id)} className="w-full mt-2 bg-green-500 hover:bg-green-600 text-white py-2 rounded-xl font-black text-xs shadow-sm border-b-4 border-green-700 active:border-b-0 active:translate-y-1">
-                  {t('quest_btn_claim')}
+                  {t('btn_claim')}
                 </button>
               )}
-               {q.claimed && (
+              {q.claimed && (
                 <div className="w-full mt-2 bg-slate-200 text-slate-400 py-2 rounded-xl font-black text-xs text-center flex items-center justify-center gap-1">
-                  <CheckCircle size={14}/> {t('quest_completed')}
+                  <CheckCircle size={14}/> {t('status_completed')}
                 </div>
               )}
             </div>

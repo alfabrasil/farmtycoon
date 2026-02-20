@@ -534,7 +534,7 @@
   "chicken_state_happy": "FELIZ",
   "chicken_action_clean": "Limpiar suciedad",
   "chicken_action_stopped": "PARADA",
-  "chicken_action_already_collected": "YA RECOLECTADO",
+  "chicken_action_already_collected": "YA LISTO",
   "chicken_action_collect": "RECOLECTAR",
   "chicken_action_use": "USAR ({0})",
   "chicken_action_no_item": "SIN ÍTEM",
