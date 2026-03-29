@@ -165,12 +165,12 @@ export const ACHIEVEMENTS_LIST = [
 ];
 
 export const WHEEL_PRIZES = [
-  { id: 'coin_50', labelKey: "wheel_coin_50_label", label: '50 Moedas', type: 'COIN', val: 50, color: '#fbbf24' },
+  { id: 'coin_10', labelKey: "wheel_coin_10_label", label: '10 CHI', type: 'COIN', val: 10, color: '#fbbf24' },
+  { id: 'feed_3', labelKey: "wheel_feed_3_label", label: '3 Rações', type: 'ITEM', item: 'feed', val: 3, color: '#3b82f6' },
+  { id: 'coin_25', labelKey: "wheel_coin_25_label", label: '25 CHI', type: 'COIN', val: 25, color: '#fbbf24' },
   { id: 'feed_5', labelKey: "wheel_feed_5_label", label: '5 Rações', type: 'ITEM', item: 'feed', val: 5, color: '#3b82f6' },
-  { id: 'coin_200', labelKey: "wheel_coin_200_label", label: '200 Moedas', type: 'COIN', val: 200, color: '#fbbf24' },
-  { id: 'egg_common', labelKey: "wheel_egg_common_label", label: '2 Ovos', type: 'ITEM', item: 'eggs_common', val: 2, color: '#94a3b8' },
-  { id: 'coin_10', labelKey: "wheel_coin_10_label", label: '10 Moedas', type: 'COIN', val: 10, color: '#fbbf24' },
+  { id: 'coin_50', labelKey: "wheel_coin_50_label", label: '50 CHI', type: 'COIN', val: 50, color: '#fbbf24' },
   { id: 'vaccine_1', labelKey: "wheel_vaccine_1_label", label: '1 Vacina', type: 'ITEM', item: 'vaccine', val: 1, color: '#ef4444' },
-  { id: 'jackpot', labelKey: "wheel_jackpot_label", label: 'JACKPOT!', type: 'COIN', val: 1000, color: '#8b5cf6', special: true },
-  { id: 'egg_rare', labelKey: "wheel_egg_rare_label", label: 'Ovo Raro', type: 'ITEM', item: 'eggs_rare', val: 1, color: '#f97316' },
+  { id: 'feed_10', labelKey: "wheel_feed_10_label", label: '10 Rações', type: 'ITEM', item: 'feed', val: 10, color: '#3b82f6' },
+  { id: 'coin_100', labelKey: "wheel_coin_100_label", label: '100 CHI', type: 'COIN', val: 100, color: '#fbbf24' },
 ];

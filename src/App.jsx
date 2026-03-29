@@ -57,6 +57,7 @@ export default function App() {
   const { t } = useLanguage();
   const { updateGameState, advanceStep, currentStep } = useTutorial();
   const [session, setSession] = useState(() => localStorage.getItem('farm_session') || 'LANDING');
+  const [onboarded, setOnboarded] = useState(() => localStorage.getItem('farm_onboarded') === 'true');
   const [playerUsername, setPlayerUsername] = useState(() => localStorage.getItem('farm_username') || '');
   const [playerProfile, setPlayerProfile] = useState(() => {
     try {
@@ -68,7 +69,7 @@ export default function App() {
   });
   const [balance, setBalance] = useState(() => {
     const val = localStorage.getItem('farm_balance');
-    return val === null ? 100 : Number(val); // 100 coins initial
+    return val === null ? 50 : Number(val);
   });
   const [bankBalance, setBankBalance] = useState(() => {
     const val = Number(localStorage.getItem('farm_bank_balance'));
@@ -122,10 +123,10 @@ export default function App() {
   const [inventory, setInventory] = useState(() => { 
     try {
       const s = localStorage.getItem('farm_inventory'); 
-      return s ? JSON.parse(s) : { feed: 5, vaccine: 0, eggs_common: 0, eggs_rare: 0, eggs_legendary: 0 }; 
+      return s ? JSON.parse(s) : { feed: 5, vaccine: 1, eggs_common: 0, eggs_rare: 0, eggs_legendary: 0 }; 
     } catch (e) {
       console.error("Erro ao carregar inventário:", e);
-      return { feed: 5, vaccine: 0, eggs_common: 0, eggs_rare: 0, eggs_legendary: 0 };
+      return { feed: 5, vaccine: 1, eggs_common: 0, eggs_rare: 0, eggs_legendary: 0 };
     }
   });
   
@@ -372,6 +373,7 @@ export default function App() {
 
   useEffect(() => {
     localStorage.setItem('farm_session', session);
+    localStorage.setItem('farm_onboarded', onboarded ? 'true' : 'false');
     localStorage.setItem('farm_balance', balance);
     localStorage.setItem('farm_bank_balance', bankBalance);
     localStorage.setItem('farm_usd_balance', String(usdBalance));
@@ -401,7 +403,7 @@ export default function App() {
     // Persistência das Novas Features
     localStorage.setItem('farm_skin', currentSkin);
     localStorage.setItem('farm_market_history', JSON.stringify(marketHistory));
-  }, [session, balance, bankBalance, usdBalance, walletHistory, walletAddresses, walletWithdrawAddresses, financialPasswordHash, playerProfile, dayCount, level, xp, inventory, chickens, weather, marketPrices, quests, stats, achievements, lastSpinDay, automations, upgrades, marketNews, coopProgress, auctionItems, goldenEggs, currentSkin, marketHistory]);
+  }, [session, onboarded, balance, bankBalance, usdBalance, walletHistory, walletAddresses, walletWithdrawAddresses, financialPasswordHash, playerProfile, dayCount, level, xp, inventory, chickens, weather, marketPrices, quests, stats, achievements, lastSpinDay, automations, upgrades, marketNews, coopProgress, auctionItems, goldenEggs, currentSkin, marketHistory]);
 
   const showToast = (arg1, arg2 = 'success') => { 
     const message = typeof arg1 === 'object' ? arg1.message : arg1;
@@ -786,8 +788,9 @@ export default function App() {
         const baseSickness = (nextWeather === 'RAINY' && !upgrades.CLIMATE) ? 0.30 : 0.05;
         const hasCleanSweep = automations.CLEANSWEEP?.active;
         const chanceOfSickness = c.has_poop && !hasCleanSweep ? 0.8 : (isHungry ? 0.4 : baseSickness);
+        const isImmuneByVaccine = (c.immune_until_day || 0) >= nextDay;
         
-        const gotSick = !c.is_starter && !c.immune && !c.is_sick && Math.random() < chanceOfSickness;
+        const gotSick = !c.is_starter && !c.immune && !isImmuneByVaccine && !c.is_sick && Math.random() < chanceOfSickness;
         const madePoop = !c.is_sick && Math.random() < 0.5;
         
         return { ...c, age_days: nextAge, is_sleeping: false, is_sick: c.is_sick || gotSick, has_poop: hasCleanSweep ? false : (c.has_poop || madePoop) };
@@ -938,7 +941,8 @@ export default function App() {
   const handleHeal = (chicken) => {
     if (inventory.vaccine >= 1) {
       setInventory(prev => ({ ...prev, vaccine: prev.vaccine - 1 }));
-      setChickens(prev => prev.map(c => c.id === chicken.id ? { ...c, is_sick: false } : c));
+      const immuneDays = 3;
+      setChickens(prev => prev.map(c => c.id === chicken.id ? { ...c, is_sick: false, immune_until_day: dayCount + immuneDays } : c));
       setStats(prev => ({ ...prev, total_healed: prev.total_healed + 1 }));
       showToast(t('app_healed_msg'), 'success');
     } else { showToast(t('app_no_vaccines'), "error"); }
@@ -1017,7 +1021,16 @@ export default function App() {
       {session === 'LANDING' && <LandingPageScreen onNavigate={(target) => setSession(target)} />}
       {session === 'AUTH' && <AuthScreen mode="login" onLogin={() => { const u = localStorage.getItem('farm_username') || ''; if (!u) { setSession('REGISTER'); localStorage.setItem('farm_session', 'REGISTER'); return; } setPlayerUsername(u); setSession('UNBOXING'); }} onBackToLanding={() => { setSession('LANDING'); localStorage.setItem('farm_session', 'LANDING'); }} onGoToRegister={() => { setSession('REGISTER'); localStorage.setItem('farm_session', 'REGISTER'); }} />}
       {session === 'REGISTER' && <AuthScreen mode="register" onRegister={(data) => { if (data?.username) { setPlayerUsername(data.username); localStorage.setItem('farm_username', data.username); } if (data) { setPlayerProfile(data); localStorage.setItem('farm_profile', JSON.stringify(data)); } setSession('UNBOXING'); }} onBackToLanding={() => { setSession('LANDING'); localStorage.setItem('farm_session', 'LANDING'); }} onGoToLogin={() => { setSession('AUTH'); localStorage.setItem('farm_session', 'AUTH'); }} />}
-      {session === 'UNBOXING' && <UnboxingScreen onFinish={() => {setChickens([{ id: uuidv4(), type: "GRANJA", name: t('app_starter_name'), age_days: 0, last_fed_day: 1, is_sick: false, has_poop: false, last_collected_day: 0, is_starter: true, immune: true }]); setBalance(50); setInventory(prev=>({...prev, feed:5})); generateDailyQuests(); setSession('GAME');}} />}
+      {session === 'UNBOXING' && <UnboxingScreen onFinish={() => {
+        if (!onboarded) {
+          setChickens([{ id: uuidv4(), type: "GRANJA", name: t('app_starter_name'), age_days: 0, last_fed_day: 1, is_sick: false, has_poop: false, last_collected_day: 0, is_starter: true, immune: true }]);
+          setBalance(50);
+          setInventory(prev => ({ ...prev, feed: 5, vaccine: 1 }));
+          setOnboarded(true);
+        }
+        generateDailyQuests();
+        setSession('GAME');
+      }} />}
       
       {session === 'GAME' && (
         <div className="relative z-10 h-screen overflow-y-auto">

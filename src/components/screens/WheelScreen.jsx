@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { X, HelpCircle } from 'lucide-react';
 import { WHEEL_PRIZES } from '../../data/gameConfig';
 import { playSound } from '../../utils/audioSystem';
@@ -10,6 +10,16 @@ const WheelScreen = ({ onBack, onSpin, canSpin, balance }) => {
   const { currentStep, completeTutorial } = useTutorial();
   const [spinning, setSpinning] = useState(false);
   const [rotation, setRotation] = useState(0);
+  const wheelGradient = useMemo(() => {
+    const n = WHEEL_PRIZES.length || 8;
+    const step = 360 / n;
+    const parts = WHEEL_PRIZES.map((p, idx) => {
+      const start = idx * step;
+      const end = (idx + 1) * step;
+      return `${p.color} ${start}deg ${end}deg`;
+    });
+    return `conic-gradient(${parts.join(', ')})`;
+  }, []);
 
   const handleSpinClick = () => {
     if (!canSpin || spinning) return;
@@ -35,7 +45,7 @@ const WheelScreen = ({ onBack, onSpin, canSpin, balance }) => {
       <div className="bg-white/90 backdrop-blur-sm p-6 md:p-8 rounded-3xl border-b-8 border-purple-300 shadow-2xl flex flex-col items-center w-full max-w-sm">
         <div className="relative mb-8">
            <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-20 text-red-500 text-4xl drop-shadow-md">▼</div>
-           <div className="w-56 h-56 md:w-64 md:h-64 rounded-full border-[8px] border-white shadow-xl overflow-hidden relative transition-transform duration-[4000ms] cubic-bezier(0.1, 0.7, 1.0, 0.1)" style={{ background: 'conic-gradient(#fbbf24 0deg 45deg, #3b82f6 45deg 90deg, #fbbf24 90deg 135deg, #94a3b8 135deg 180deg, #fbbf24 180deg 225deg, #ef4444 225deg 270deg, #8b5cf6 270deg 315deg, #f97316 315deg 360deg)', transform: `rotate(${rotation}deg)` }}></div>
+           <div className="w-56 h-56 md:w-64 md:h-64 rounded-full border-[8px] border-white shadow-xl overflow-hidden relative transition-transform duration-[4000ms] cubic-bezier(0.1, 0.7, 1.0, 0.1)" style={{ background: wheelGradient, transform: `rotate(${rotation}deg)` }}></div>
            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-white rounded-full shadow-lg flex items-center justify-center border-4 border-slate-200 z-10 font-black text-purple-600"><HelpCircle size={32} className="text-purple-500" /></div>
         </div>
         <h3 className="text-xl font-black text-slate-700 mb-2">{t('wheel_try_luck')}</h3>
