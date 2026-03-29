@@ -2,6 +2,21 @@ import React, { useMemo } from 'react';
 import { getChickenAssets } from '../../utils/assetResolver';
 
 const ChickenVisual = ({ chicken, dayCount, overrideStatus = null, className = '' }) => {
+  const adultThreshold = chicken.adult_threshold || 30;
+  const isAdult = (chicken.age_days || 0) >= adultThreshold;
+
+  const getBabyImage = () => {
+    if (chicken.is_starter) return '/assets/logo/logo_pool_chicken.svg';
+    const type = chicken.type;
+    if (type === 'GRANJA') return '/assets/body_baby/body_g1.png';
+    if (type === 'CAIPIRA' || type === 'IMPERIAL') return '/assets/body_baby/body_g2_g4.png';
+    if (type === 'GIGANTE' || type === 'DIVINA') return '/assets/body_baby/body_g3_g5.png';
+    if (type === 'robot') return '/assets/body_baby/body_robot.png';
+    if (type === 'alien') return '/assets/body_baby/body_alien.png';
+    if (type === 'griffin') return '/assets/body_baby/body_griffin.png';
+    return '/assets/body_baby/body_g1.png';
+  };
+
   // Memoiza os assets para evitar recálculos desnecessários
   const assets = useMemo(() => {
     return getChickenAssets(chicken, dayCount || 0, overrideStatus);
@@ -16,6 +31,19 @@ const ChickenVisual = ({ chicken, dayCount, overrideStatus = null, className = '
     // ...(chicken.type === 'alien' ? { transform: 'scale(2.0) translateY(-15%)' } : {}),
     filter: outlineFilter
   };
+
+  if (!isAdult) {
+    const babySrc = getBabyImage();
+    return (
+      <div className={`relative w-24 h-24 flex items-center justify-center ${className}`}>
+        <img
+          src={babySrc}
+          alt="baby"
+          className={`w-full h-full object-contain drop-shadow-md ${chicken.is_starter ? 'animate-bounce' : ''}`}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className={`relative w-24 h-24 flex items-center justify-center ${className}`}>

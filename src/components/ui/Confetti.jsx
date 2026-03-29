@@ -4,7 +4,7 @@ const Confetti = () => (
   <div className="fixed inset-0 pointer-events-none z-[150] overflow-hidden">
     {[...Array(50)].map((_, i) => (
       <div
-        key={i}
+        key={`confetti-piece-${i}`}
         className="absolute w-3 h-3 bg-red-500 rounded-sm animate-[confetti_3s_ease-out_forwards]"
         style={{
           left: '50%',

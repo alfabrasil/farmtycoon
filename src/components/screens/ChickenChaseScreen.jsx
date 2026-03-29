@@ -297,8 +297,8 @@ const ChickenChaseScreen = ({ onBack, balance, setBalance, showToast }) => {
 
                 <div className="space-y-3">
                   <h3 className="font-black text-slate-700 ml-2">{t('chase_bet_book')}</h3>
-                  {challenges.map(c => (
-                    <div key={c.id} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all">
+                  {challenges.map((c, index) => (
+                    <div key={`bet-${c.id}-${index}`} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-xl">{c.avatar}</div>
                         <div>

@@ -1,12 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { X, Volume2, VolumeX, Save, Download, Crown, Globe, RefreshCcw, Music } from 'lucide-react';
+import { X, Volume2, VolumeX, Save, Download, Crown, Globe, RefreshCcw, Music, LogOut, Wallet, KeyRound, Eye, EyeOff } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTutorial } from '../../contexts/TutorialContext';
 import { bgm } from '../../utils/musicSystem';
 
-const SettingsScreen = ({ onBack, onReset, dayCount, isMuted, toggleMute, onPrestige, canPrestige, goldenEggsToGain, onExportSave, onImportSave }) => {
+const sha256Hex = async (input) => {
+  try {
+    const data = new TextEncoder().encode(input);
+    const digest = await crypto.subtle.digest('SHA-256', data);
+    return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
+  } catch {
+    return `plain:${input}`;
+  }
+};
+
+const SettingsScreen = ({ onBack, onReset, onLogout, dayCount, isMuted, toggleMute, onPrestige, canPrestige, goldenEggsToGain, onExportSave, onImportSave, walletWithdrawAddresses, setWalletWithdrawAddresses, financialPasswordHash, setFinancialPasswordHash }) => {
   const { t, language, changeLanguage, languages } = useLanguage();
   const { restartTutorial } = useTutorial();
+  const [finPass1, setFinPass1] = useState('');
+  const [finPass2, setFinPass2] = useState('');
+  const [showFinPass1, setShowFinPass1] = useState(false);
+  const [showFinPass2, setShowFinPass2] = useState(false);
+  const [finSaved, setFinSaved] = useState(false);
+  const [walletSaved, setWalletSaved] = useState(false);
 
   // Estado local para controle da música
   const [musicEnabled, setMusicEnabled] = useState(bgm.isEnabledState());
@@ -31,6 +47,28 @@ const SettingsScreen = ({ onBack, onReset, dayCount, isMuted, toggleMute, onPres
     const val = parseFloat(e.target.value);
     setMusicVolume(val);
     bgm.setVolume(val);
+  };
+
+  const updateWithdrawAddress = (key, value) => {
+    setWalletWithdrawAddresses?.((prev) => ({ ...(prev || {}), [key]: value }));
+  };
+
+  const handleSaveWallet = () => {
+    setWalletSaved(true);
+    setWalletWithdrawAddresses?.((prev) => ({ ...(prev || {}) }));
+    setTimeout(() => setWalletSaved(false), 1500);
+  };
+
+  const handleSaveFinancialPassword = async () => {
+    setFinSaved(false);
+    if (!finPass1 || finPass1.length < 4) return;
+    if (finPass1 !== finPass2) return;
+    const hash = await sha256Hex(finPass1);
+    setFinancialPasswordHash?.(hash);
+    setFinPass1('');
+    setFinPass2('');
+    setFinSaved(true);
+    setTimeout(() => setFinSaved(false), 1500);
   };
 
   return (
@@ -79,7 +117,7 @@ const SettingsScreen = ({ onBack, onReset, dayCount, isMuted, toggleMute, onPres
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-3">
                 <Music size={24} className={musicEnabled ? "text-purple-500" : "text-slate-400"}/>
-                <span className="font-bold text-slate-700">Música de Fundo</span>
+                <span className="font-bold text-slate-700">{t('settings_music')}</span>
               </div>
               <button 
                 onClick={handleMusicToggle} 
@@ -92,7 +130,7 @@ const SettingsScreen = ({ onBack, onReset, dayCount, isMuted, toggleMute, onPres
             {/* Volume Slider */}
             <div className={`transition-all duration-300 ${!musicEnabled ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-bold text-slate-400">VOL</span>
+                <span className="text-[10px] font-bold text-slate-400">{t('settings_vol')}</span>
                 <input 
                   type="range" 
                   min="0" 
@@ -131,6 +169,104 @@ const SettingsScreen = ({ onBack, onReset, dayCount, isMuted, toggleMute, onPres
           </div>
         </div>
 
+        {/* Carteiras de Saque & Senha Financeira */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 text-slate-400 text-xs font-black uppercase px-1">
+            <Wallet size={14}/> {t('settings_wallet_title')}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {[
+              { key: 'USDT_BEP20', label: 'USDT (BEP-20)' },
+              { key: 'USDT_POLYGON', label: 'USDT (Polygon)' },
+              { key: 'USDT_TRC20', label: 'USDT (TRC-20)' },
+              { key: 'USDT_ARBITRUM', label: 'USDT (Arbitrum)' },
+              { key: 'USDC_BEP20', label: 'USDC (BEP-20)' },
+              { key: 'USDC_ARBITRUM', label: 'USDC (Arbitrum)' },
+              { key: 'PIX', label: 'PIX' },
+            ].map((item) => (
+              <div key={item.key} className="bg-slate-50 rounded-2xl border border-slate-200 p-3">
+                <div className="text-[11px] font-black text-slate-500 uppercase mb-2">{item.label}</div>
+                <input
+                  value={(walletWithdrawAddresses && walletWithdrawAddresses[item.key]) || ''}
+                  onChange={(e) => updateWithdrawAddress(item.key, e.target.value)}
+                  placeholder={t('settings_wallet_placeholder')}
+                  className="w-full bg-white border-2 border-slate-200 rounded-xl px-3 py-2 font-bold text-slate-700 text-sm"
+                />
+              </div>
+            ))}
+          </div>
+
+          <div className="text-xs font-bold text-slate-500 px-1">
+            {t('settings_wallet_autosave')}
+          </div>
+
+          <button
+            type="button"
+            onClick={handleSaveWallet}
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-black text-xs border-b-4 border-emerald-800 active:border-b-0 active:translate-y-1 transition-all"
+          >
+            {walletSaved ? t('settings_wallet_saved') : t('settings_wallet_save')}
+          </button>
+
+          <div className="flex items-center gap-2 text-slate-400 text-xs font-black uppercase px-1 pt-2">
+            <KeyRound size={14}/> {t('settings_finpass_title')}
+          </div>
+
+          <div className="bg-slate-50 rounded-2xl border border-slate-200 p-4 space-y-3">
+            <div className="text-xs font-bold text-slate-600">
+              {financialPasswordHash ? t('settings_finpass_set') : t('settings_finpass_not_set')}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="relative">
+                <input
+                  value={finPass1}
+                  onChange={(e) => setFinPass1(e.target.value)}
+                  type={showFinPass1 ? 'text' : 'password'}
+                  placeholder={t('settings_finpass_new')}
+                  className="w-full bg-white border-2 border-slate-200 rounded-xl px-3 py-2 pr-10 font-bold text-slate-700 text-sm"
+                />
+                <button type="button" onClick={() => setShowFinPass1((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700" aria-label={showFinPass1 ? t('hide_password') : t('show_password')}>
+                  {showFinPass1 ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+
+              <div className="relative">
+                <input
+                  value={finPass2}
+                  onChange={(e) => setFinPass2(e.target.value)}
+                  type={showFinPass2 ? 'text' : 'password'}
+                  placeholder={t('settings_finpass_confirm')}
+                  className="w-full bg-white border-2 border-slate-200 rounded-xl px-3 py-2 pr-10 font-bold text-slate-700 text-sm"
+                />
+                <button type="button" onClick={() => setShowFinPass2((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700" aria-label={showFinPass2 ? t('hide_password') : t('show_password')}>
+                  {showFinPass2 ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleSaveFinancialPassword}
+              className="w-full bg-slate-800 hover:bg-slate-900 text-white py-3 rounded-xl font-black text-xs border-b-4 border-slate-950 active:border-b-0 active:translate-y-1 transition-all"
+            >
+              {finSaved ? t('settings_finpass_saved') : t('settings_finpass_save')}
+            </button>
+
+            {finPass1 && finPass1.length < 4 && (
+              <div className="text-xs font-bold text-red-600">
+                {t('settings_finpass_min')}
+              </div>
+            )}
+            {finPass1 && finPass2 && finPass1 !== finPass2 && (
+              <div className="text-xs font-bold text-red-600">
+                {t('settings_finpass_mismatch')}
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Save/Load */}
         <div className="flex gap-2">
           <button onClick={onExportSave} className="flex-1 bg-blue-100 text-blue-600 py-3 rounded-xl font-bold text-xs border-2 border-blue-200 flex items-center justify-center gap-1">
@@ -162,9 +298,15 @@ const SettingsScreen = ({ onBack, onReset, dayCount, isMuted, toggleMute, onPres
           </button>
         </div>
 
-        <button onClick={onReset} className="w-full bg-red-100 text-red-600 border-2 border-red-200 py-3 rounded-xl font-bold shadow-sm text-xs">
-          {t('btn_reset')}
-        </button>
+        {/* Reset & Logout */}
+        <div className="space-y-3">
+          <button onClick={onReset} className="w-full bg-red-100 text-red-600 border-2 border-red-200 py-3 rounded-xl font-bold shadow-sm text-xs">
+            {t('btn_reset')}
+          </button>
+          <button onClick={onLogout} className="w-full bg-slate-100 text-slate-600 border-2 border-slate-200 py-3 rounded-xl font-bold shadow-sm text-xs flex items-center justify-center gap-2">
+            <LogOut size={16} /> {t('settings_logout')}
+          </button>
+        </div>
       </div>
     </div>
   );

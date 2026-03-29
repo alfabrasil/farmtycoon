@@ -9,7 +9,7 @@ const HarvestSetup = ({ onBack, onConfirm, balance, chickens = [] }) => {
   const [bet, setBet] = useState(50);
   const [difficulty, setDifficulty] = useState('MEDIUM');
   const [time, setTime] = useState(120);
-  const [mode, setMode] = useState('BOT'); // BOT, PVP_MOCK
+  const [mode, setMode] = useState('PVP_MOCK'); // BOT, PVP_MOCK
   const [selectedChicken, setSelectedChicken] = useState((chickens && chickens.length > 0) ? chickens[0] : null);
   
   // AVATAR SELECTION
@@ -89,16 +89,16 @@ const HarvestSetup = ({ onBack, onConfirm, balance, chickens = [] }) => {
       {/* Mode Selection */}
       <div className="flex p-1 bg-slate-200 rounded-2xl mb-8">
         <button 
-          onClick={() => { setMode('BOT'); playSound('click'); }}
-          className={`flex-1 py-3 rounded-xl font-black text-xs transition-all flex items-center justify-center gap-2 ${mode === 'BOT' ? 'bg-white text-slate-800 shadow-md' : 'text-slate-500 hover:text-slate-600'}`}
-        >
-          <Bot size={18} /> {t('harvest_vs_bot')}
-        </button>
-        <button 
           onClick={() => { setMode('PVP_MOCK'); playSound('click'); }}
           className={`flex-1 py-3 rounded-xl font-black text-xs transition-all flex items-center justify-center gap-2 ${mode === 'PVP_MOCK' ? 'bg-white text-slate-800 shadow-md' : 'text-slate-500 hover:text-slate-600'}`}
         >
           <Users2 size={18} /> {t('harvest_pvp_simulated')}
+        </button>
+        <button 
+          onClick={() => { setMode('BOT'); playSound('click'); }}
+          className={`flex-1 py-3 rounded-xl font-black text-xs transition-all flex items-center justify-center gap-2 ${mode === 'BOT' ? 'bg-white text-slate-800 shadow-md' : 'text-slate-500 hover:text-slate-600'}`}
+        >
+          <Bot size={18} /> {t('harvest_vs_bot')}
         </button>
       </div>
 

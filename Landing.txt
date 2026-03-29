@@ -1,0 +1,10 @@
+Preciso criar uma landingpage explicativo sobre o funcionamento do projeto mostrando personagens, criei uma pasta chamada "landingpage fora da pasta public, pois o github somente permite
+até 100 arquivo, para não criar tanto volume, decidi por fora, peço sua sabedoria e engenharia nessa criação, pois fiz um rabisco do canvas de como preciso que seja feito, mas confio na sua engenharia apromirada,
+na pasta: landingpage/logo_landing/logo_pool_chicken.png que é o ovo e a logo_chi.png que é da moeda interna CHI e a logo somente com o nome logo_soloname_chicken.png que fica no topo esquerdo da página que fiz.
+Na pasta: landingpage/characters/Alien_Galinha/addon_alien e todas as pastas assim como na pasta Robot_Galinha e as demais, peço que olhe de forma minuciosa antes de montar.
+Use sua engenharia avançada e implemente da melhor forma, lembre-se que temos 3 idiomas.
+
+
+
+
+

@@ -17,12 +17,12 @@ const ChickenCard = ({ chicken, onFeed, onCollect, onHeal, onClean, onCustomize,
   // ESTADO: Humor Transiente (Expressões Dinâmicas)
   const [tempMood, setTempMood] = React.useState(null);
 
-  const isHungry = chicken.last_fed_day < dayCount;
-  const isSick = chicken.is_sick; 
   const isAdult = chicken.age_days >= (chicken.adult_threshold || 30);
+  const isHungry = isAdult && chicken.last_fed_day < dayCount;
+  const isSick = isAdult && chicken.is_sick; 
   const hasFeed = inventory.feed >= config.feedConsumption;
   const hasVaccine = inventory.vaccine >= 1;
-  const hasPoop = chicken.has_poop; 
+  const hasPoop = isAdult && chicken.has_poop; 
   const hasLaidToday = chicken.last_collected_day === dayCount;
   
   const canCustomize = ADDONS_CONFIG[chicken.type] && onCustomize;
@@ -77,13 +77,7 @@ const ChickenCard = ({ chicken, onFeed, onCollect, onHeal, onClean, onCustomize,
   
   const renderAvatar = () => {
     // if (isSick) return <div className="text-6xl animate-pulse grayscale brightness-50 contrast-125">🤢</div>; // REMOVIDO: Usar Sprite Layered
-    if (chicken.type === 'GRANJA' && !isAdult) {
-      return (
-        <div className="w-20 h-20 animate-bounce">
-          <img src="/assets/logo/logo_pool_chicken.svg" alt="Baby Chicken" className="w-full h-full object-contain drop-shadow-md" />
-        </div>
-      );
-    }
+    if (!isAdult) return <ChickenVisual chicken={chicken} dayCount={dayCount} overrideStatus={chicken.is_sleeping ? null : tempMood} className="hover:scale-110 transition-transform duration-300" />;
     
     // Visuais especiais para Mutantes/Cyber/Variantes
     if (variant) {
@@ -98,7 +92,7 @@ const ChickenCard = ({ chicken, onFeed, onCollect, onHeal, onClean, onCustomize,
     if (chicken.age_days >= 90 && chicken.type === 'GRANJA') return <div className="relative text-6xl grayscale-[0.3]">🐔<div className="absolute top-2 left-1 bg-white/80 rounded-full p-1 border border-black rotate-12"><Glasses size={16}/></div><div className="absolute bottom-0 right-0 text-xl">🦯</div></div>;
     
     // Novo Sistema de Sprites em Camadas (Layered Sprites)
-    return <ChickenVisual chicken={chicken} dayCount={dayCount} overrideStatus={tempMood} className="hover:scale-110 transition-transform duration-300" />;
+    return <ChickenVisual chicken={chicken} dayCount={dayCount} overrideStatus={chicken.is_sleeping ? null : tempMood} className="hover:scale-110 transition-transform duration-300" />;
   };
 
   return (

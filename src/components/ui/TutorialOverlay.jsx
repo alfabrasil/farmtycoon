@@ -238,7 +238,7 @@ const TutorialOverlay = () => {
               <div className="flex gap-1.5 items-center">
                 {content.totalSteps && [...Array(content.totalSteps)].map((_, i) => (
                   <motion.div 
-                    key={i} 
+                    key={`tutorial-step-${i}`} 
                     initial={false}
                     animate={{ 
                       width: i + 1 === content.stepIndex ? 24 : 6,

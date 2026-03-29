@@ -1,12 +1,13 @@
 import React from 'react';
 import { 
-  Sparkles, CloudRain, Sun, Bot, Trash2, Landmark, Dna, Settings as SettingsIcon, Dices, 
+  Sparkles, CloudRain, Sun, Bot, Trash2, Wallet, Dna, Settings as SettingsIcon, Dices, 
   Users2, ClipboardList, Warehouse, ShoppingBag, Gamepad2, AlertCircle, HelpCircle, Info, Zap
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { playSound } from '../utils/audioSystem';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTutorial } from '../contexts/TutorialContext';
+import ChiIcon from './ui/ChiIcon';
 
 const Navbar = ({ balance, dayCount, onViewChange, currentView, level, xp, xpToNextLevel, weather, openQuests, goldenEggs, pendingRewards, automations, upgrades }) => {
   const { t } = useLanguage();
@@ -72,7 +73,7 @@ const Navbar = ({ balance, dayCount, onViewChange, currentView, level, xp, xpToN
         </div>
 
         <div onClick={() => { playSound('pop'); onViewChange('WALLET'); }} className="md:hidden flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-md border bg-white text-slate-700 border-slate-200 cursor-pointer hover:scale-105 transition-transform">
-          <span className="text-yellow-500">💰</span> {balance}
+          <ChiIcon className="w-4 h-4" /> {balance}
         </div>
       </div>
 
@@ -83,7 +84,7 @@ const Navbar = ({ balance, dayCount, onViewChange, currentView, level, xp, xpToN
            {automations?.CLEANSWEEP?.active && <div className="bg-green-100 text-green-600 p-1 rounded-lg text-xs font-bold border border-green-200 flex items-center gap-1 animate-pulse"><Trash2 size={14}/> {t('store_active')}</div>}
         </div>
 
-        <div onClick={() => { playSound('pop'); onViewChange('BANK'); }} className={`p-2 rounded-full border-b-4 active:border-b-0 active:translate-y-1 transition-all cursor-pointer shadow-sm shrink-0 ${currentView === 'BANK' ? 'bg-green-100 text-green-700 border-green-300' : 'bg-white text-slate-400 border-slate-200 hover:text-green-600'}`} title={t('view_bank')}><Landmark size={20} /></div>
+        <div onClick={() => { playSound('pop'); onViewChange('WALLET'); }} className={`p-2 rounded-full border-b-4 active:border-b-0 active:translate-y-1 transition-all cursor-pointer shadow-sm shrink-0 ${currentView === 'WALLET' ? 'bg-green-100 text-green-700 border-green-300' : 'bg-white text-slate-400 border-slate-200 hover:text-green-600'}`} title={t('wallet_title')}><Wallet size={20} /></div>
         
         {/* GENETICA (LAB) - Visível apenas se comprado */}
         {upgrades?.LAB && (
@@ -147,7 +148,7 @@ const Navbar = ({ balance, dayCount, onViewChange, currentView, level, xp, xpToN
         </div>
         
         <div className="h-8 w-[2px] bg-slate-300 mx-1 hidden md:block"></div>
-        <div onClick={() => { playSound('pop'); onViewChange('WALLET'); }} className="hidden md:flex flex-col items-end gap-0.5 cursor-pointer hover:scale-105 transition-transform"><div className="flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-md border min-w-[80px] justify-end bg-white text-slate-700 border-slate-200"><span className="text-yellow-500">💰</span> {balance}</div></div>
+        <div onClick={() => { playSound('pop'); onViewChange('WALLET'); }} className="hidden md:flex flex-col items-end gap-0.5 cursor-pointer hover:scale-105 transition-transform"><div className="flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-md border min-w-[80px] justify-end bg-white text-slate-700 border-slate-200"><ChiIcon className="w-4 h-4" /> {balance}</div></div>
       </div>
     </header>
   );

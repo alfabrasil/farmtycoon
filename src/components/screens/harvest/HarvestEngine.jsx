@@ -138,84 +138,83 @@ const HarvestEngine = ({ config, onFinish, showToast }) => {
 
     // Throttle movement
     const now = Date.now();
-    const moveDelay = player.speed > 1 ? 100 : 200;
+    const moveDelay = (stateRef.current.player?.speed || 1) > 1 ? 100 : 200;
     if (now - lastMoveRef.current < moveDelay) return;
     lastMoveRef.current = now;
 
-    setPlayer(prev => {
-      let nx = prev.x + dx;
-      let ny = prev.y + dy;
-      
-      let newFacing = prev.facing;
-      if (dx > 0) newFacing = 'RIGHT';
-      if (dx < 0) newFacing = 'LEFT';
+    const { player: currentPlayer, opp: currentOpp, items: currentItems } = stateRef.current;
+    if (!currentPlayer || !currentOpp) return;
 
-      // Habilidade MUTANTE: Teletransporte (Bordas)
-      if (passive?.bonus === 'TELEPORT') {
-        if (nx < 0) nx = GRID_SIZE - 1;
-        else if (nx >= GRID_SIZE) nx = 0;
-        if (ny < 0) ny = GRID_SIZE - 1;
-        else if (ny >= GRID_SIZE) ny = 0;
-      } else {
-        nx = Math.max(0, Math.min(GRID_SIZE - 1, nx));
-        ny = Math.max(0, Math.min(GRID_SIZE - 1, ny));
+    let nx = currentPlayer.x + dx;
+    let ny = currentPlayer.y + dy;
+
+    let newFacing = currentPlayer.facing;
+    if (dx > 0) newFacing = 'RIGHT';
+    if (dx < 0) newFacing = 'LEFT';
+
+    if (passive?.bonus === 'TELEPORT') {
+      if (nx < 0) nx = GRID_SIZE - 1;
+      else if (nx >= GRID_SIZE) nx = 0;
+      if (ny < 0) ny = GRID_SIZE - 1;
+      else if (ny >= GRID_SIZE) ny = 0;
+    } else {
+      nx = Math.max(0, Math.min(GRID_SIZE - 1, nx));
+      ny = Math.max(0, Math.min(GRID_SIZE - 1, ny));
+    }
+
+    if (nx === currentOpp.x && ny === currentOpp.y) {
+      const force = passive?.bonus === 'PUSH_FORCE' ? 2 : 1;
+      const pushX = currentOpp.x + (dx * force);
+      const pushY = currentOpp.y + (dy * force);
+
+      const finalPushX = Math.max(0, Math.min(GRID_SIZE - 1, pushX));
+      const finalPushY = Math.max(0, Math.min(GRID_SIZE - 1, pushY));
+
+      if (finalPushX !== currentOpp.x || finalPushY !== currentOpp.y) {
+        setOpp((o) => ({ ...o, x: finalPushX, y: finalPushY }));
+        playSound('pop');
       }
+      setPlayer((p) => ({ ...p, facing: newFacing }));
+      return;
+    }
 
-      // Check collision with opponent
-      if (nx === opp.x && ny === opp.y) {
-        // Pushing mechanic
-        const force = passive?.bonus === 'PUSH_FORCE' ? 2 : 1;
-        const pushX = opp.x + (dx * force);
-        const pushY = opp.y + (dy * force);
-        
-        const finalPushX = Math.max(0, Math.min(GRID_SIZE - 1, pushX));
-        const finalPushY = Math.max(0, Math.min(GRID_SIZE - 1, pushY));
+    const itemAtPos = (currentItems || []).find((i) => i.x === nx && i.y === ny);
+    if (!itemAtPos) {
+      setPlayer((p) => ({ ...p, x: nx, y: ny, facing: newFacing }));
+      return;
+    }
 
-        if (finalPushX !== opp.x || finalPushY !== opp.y) {
-          setOpp(o => ({ ...o, x: finalPushX, y: finalPushY }));
-          playSound('pop');
-        }
-        return { ...prev, facing: newFacing }; // Bloqueado, mas vira para o lado
-      }
+    setItems((prevItems) => prevItems.filter((i) => i.id !== itemAtPos.id));
 
-      // Check item collection
-      const itemAtPos = items.find(i => i.x === nx && i.y === ny);
-      if (itemAtPos) {
-        setItems(prevItems => prevItems.filter(i => i.id !== itemAtPos.id));
-        
-        let newScore = prev.score + (itemAtPos.points || 0);
-        let newSpeed = prev.speed;
-        let newShield = prev.shield;
+    let newScore = currentPlayer.score + (itemAtPos.points || 0);
+    let newSpeed = currentPlayer.speed;
+    let newShield = currentPlayer.shield;
 
-        // Regra de Escudo Passivo (GRANJA)
-        if (itemAtPos.points < 0 && newShield > 0) {
-          newShield--;
-          newScore = prev.score; // Não perde pontos
-          playSound('achievement');
-          showToast(t('harvest_msg_shield_protected'), "info");
-          return { ...prev, x: nx, y: ny, score: newScore, shield: newShield, facing: newFacing };
-        }
+    if ((itemAtPos.points || 0) < 0 && newShield > 0) {
+      newShield -= 1;
+      newScore = currentPlayer.score;
+      playSound('achievement');
+      showToast?.(t('harvest_msg_shield_protected'), "info");
+      setPlayer((p) => ({ ...p, x: nx, y: ny, score: newScore, shield: newShield, facing: newFacing }));
+      return;
+    }
 
-        if (itemAtPos.effect === 'SPEED') {
-          newSpeed = 1.5;
-          const duration = passive?.bonus === 'BUFF_EXTEND' ? itemAtPos.duration * (1 + passive.value) : itemAtPos.duration;
-          setTimeout(() => setPlayer(p => ({ ...p, speed: baseSpeed })), duration * 1000);
-          playSound('success');
-        } else if (itemAtPos.effect === 'SHIELD') {
-          newShield = 2; 
-          playSound('achievement');
-        } else if (itemAtPos.points > 0) {
-          playSound('pop');
-        } else if (itemAtPos.points < 0) {
-          playSound('error');
-        }
+    if (itemAtPos.effect === 'SPEED') {
+      newSpeed = 1.5;
+      const duration = passive?.bonus === 'BUFF_EXTEND' ? itemAtPos.duration * (1 + passive.value) : itemAtPos.duration;
+      setTimeout(() => setPlayer((p) => ({ ...p, speed: baseSpeed })), duration * 1000);
+      playSound('success');
+    } else if (itemAtPos.effect === 'SHIELD') {
+      newShield = 2;
+      playSound('achievement');
+    } else if ((itemAtPos.points || 0) > 0) {
+      playSound('pop');
+    } else if ((itemAtPos.points || 0) < 0) {
+      playSound('error');
+    }
 
-        return { ...prev, x: nx, y: ny, score: newScore, speed: newSpeed, shield: newShield, facing: newFacing };
-      }
-
-      return { ...prev, x: nx, y: ny, facing: newFacing };
-    });
-  }, [isReady, timeLeft, opp, items, player.speed, passive, baseSpeed, showToast, t]);
+    setPlayer((p) => ({ ...p, x: nx, y: ny, score: newScore, speed: newSpeed, shield: newShield, facing: newFacing }));
+  }, [isReady, timeLeft, passive, baseSpeed, showToast, t]);
 
   // Keyboard Controls
   useEffect(() => {

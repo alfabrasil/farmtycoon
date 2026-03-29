@@ -3,7 +3,7 @@ import { X, Sparkles, Egg, Trash2, DollarSign, Clock, Trophy, Lock, CheckCircle 
 import { ACHIEVEMENTS_LIST } from '../../data/gameConfig';
 import { useLanguage } from '../../contexts/LanguageContext';
 
-const ProfileScreen = ({ onBack, stats, achievements, level, xp, xpToNextLevel, goldenEggs }) => {
+const ProfileScreen = ({ onBack, username, stats, achievements, level, xp, xpToNextLevel, goldenEggs }) => {
   const { t } = useLanguage();
   const unlockedCount = achievements.filter(a => a.unlocked).length;
 
@@ -26,7 +26,9 @@ const ProfileScreen = ({ onBack, stats, achievements, level, xp, xpToNextLevel, 
             {t('profile_lvl')} {level}
           </div>
         </div>
-        <h2 className="text-2xl font-black text-slate-800 relative z-10">{t('farmer_master')}</h2>
+        <h2 className="text-2xl font-black text-slate-800 relative z-10">
+          {username ? t('farmer_master_user', [username]) : t('farmer_master')}
+        </h2>
         {goldenEggs > 0 && (
           <div className="relative z-10 bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-black flex items-center gap-1 mt-2 border border-yellow-200 animate-pulse">
             <Sparkles size={12}/> {t('profile_golden_eggs', [goldenEggs, goldenEggs * 10])}
@@ -80,10 +82,10 @@ const ProfileScreen = ({ onBack, stats, achievements, level, xp, xpToNextLevel, 
           </span>
         </div>
         <div className="space-y-3">
-          {ACHIEVEMENTS_LIST.map(achievement => {
+          {ACHIEVEMENTS_LIST.map((achievement, index) => {
             const isUnlocked = achievements.find(a => a.id === achievement.id)?.unlocked;
             return (
-              <div key={achievement.id} className={`flex items-center gap-4 p-3 rounded-2xl border-2 transition-all ${isUnlocked ? 'bg-yellow-50 border-yellow-200' : 'bg-slate-50 border-slate-100 grayscale opacity-60'}`}>
+              <div key={`achiev-${achievement.id}-${index}`} className={`flex items-center gap-4 p-3 rounded-2xl border-2 transition-all ${isUnlocked ? 'bg-yellow-50 border-yellow-200' : 'bg-slate-50 border-slate-100 grayscale opacity-60'}`}>
                 <div className={`w-12 h-12 flex items-center justify-center text-2xl bg-white rounded-xl shadow-sm border ${isUnlocked ? 'border-yellow-200' : 'border-slate-200'}`}>{isUnlocked ? achievement.icon : <Lock size={20} className="text-slate-300"/>}</div>
                 <div className="flex-1">
                   <h4 className={`font-black text-sm ${isUnlocked ? 'text-slate-800' : 'text-slate-500'}`}>

@@ -148,8 +148,8 @@ const CockfightScreen = ({ onBack, balance, setBalance, showToast }) => {
             {t('harvest_history_empty')}
           </div>
         ) : (
-          history.map(match => (
-            <div key={match.id} className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex items-center justify-between">
+          history.map((match, index) => (
+            <div key={`history-${match.id}-${index}`} className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl ${
                   match.result === 'WIN' ? 'bg-green-100' : match.result === 'DRAW' ? 'bg-slate-100' : 'bg-red-100'
@@ -338,9 +338,9 @@ const CockfightScreen = ({ onBack, balance, setBalance, showToast }) => {
                 <div>
                   <span className="text-xs font-black text-slate-400 uppercase block mb-3">{t('cockfight_choose_element')}</span>
                   <div className="grid grid-cols-2 gap-3">
-                    {Object.values(RINHA_CONFIG.ELEMENTS).map(el => (
+                    {Object.values(RINHA_CONFIG.ELEMENTS).map((el, index) => (
                       <button 
-                        key={el.id}
+                        key={`element-${el.id}-${index}`}
                         onClick={() => setSelectedElement(el.id)}
                         className={`p-3 rounded-xl border-2 transition-all flex items-center gap-2 font-bold ${selectedElement === el.id ? 'border-red-500 bg-red-50 text-red-700 shadow-lg shadow-red-100' : 'border-slate-100 bg-slate-50 text-slate-500 hover:border-slate-200'}`}
                       >
@@ -385,9 +385,9 @@ const CockfightScreen = ({ onBack, balance, setBalance, showToast }) => {
                 <div>
                   <span className="text-xs font-black text-slate-400 uppercase block mb-3">{t('cockfight_choose_color')}</span>
                   <div className="grid grid-cols-2 gap-3">
-                    {Object.values(RINHA_CONFIG.COLORS).map(c => (
+                    {Object.values(RINHA_CONFIG.COLORS).map((c, index) => (
                       <button 
-                        key={c.id}
+                        key={`color-${c.id}-${index}`}
                         onClick={() => setSelectedColor(c.id)}
                         className={`p-3 rounded-xl border-2 transition-all flex items-center gap-2 font-bold ${selectedColor === c.id ? 'border-slate-800 bg-slate-900 text-white' : 'border-slate-100 bg-slate-50 text-slate-500 hover:border-slate-200'}`}
                       >

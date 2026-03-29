@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Home, ShoppingBag, Warehouse, ClipboardList, Menu, Users2, Dices, Landmark, Settings as SettingsIcon, Gamepad2, Zap, AlertCircle, Dna } from 'lucide-react';
+import { Home, ShoppingBag, Warehouse, ClipboardList, Menu, Users2, Dices, Wallet, Settings as SettingsIcon, Gamepad2, Zap, AlertCircle, Dna } from 'lucide-react';
 import { playSound } from '../utils/audioSystem';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTutorial } from '../contexts/TutorialContext';
@@ -33,7 +33,7 @@ const MobileBottomNav = ({ currentView, onViewChange, openQuests, pendingRewards
             )}
             <button onClick={() => { playSound('pop'); onViewChange('HARVEST'); setIsMenuOpen(false); }} className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-100 text-slate-700 font-bold whitespace-nowrap"><Zap size={20} className="text-green-500"/> {t('nav_harvest_pvp')}</button>
             <button onClick={() => { playSound('pop'); onViewChange('WHEEL'); setIsMenuOpen(false); }} className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-100 text-slate-700 font-bold relative whitespace-nowrap"><Dices size={20} className="text-purple-400"/> {t('nav_wheel')} {crisisStep === 'CRISIS_DAILY_WHEEL' && <div className="absolute top-1 right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>}</button>
-            <button onClick={() => { playSound('pop'); onViewChange('BANK'); setIsMenuOpen(false); }} className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-100 text-slate-700 font-bold whitespace-nowrap"><Landmark size={20} className="text-green-500"/> {t('nav_bank')}</button>
+            <button onClick={() => { playSound('pop'); onViewChange('WALLET'); setIsMenuOpen(false); }} className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-100 text-slate-700 font-bold whitespace-nowrap"><Wallet size={20} className="text-green-500"/> {t('nav_wallet')}</button>
             <button onClick={() => { playSound('pop'); onViewChange('SETTINGS'); setIsMenuOpen(false); }} className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-100 text-slate-700 font-bold whitespace-nowrap"><SettingsIcon size={20} className="text-slate-500"/> {t('nav_settings')}</button>
           </div>
         </div>

@@ -35,7 +35,7 @@ const BarnScreen = ({ onBack, inventory, onSellEggs, addFloatingText, marketPric
            {marketHistory.map((dayData, idx) => {
              const heightPct = Math.min((dayData.common / maxPriceInHistory) * 100, 100);
              return (
-               <div key={idx} className="flex-1 flex flex-col items-center group relative">
+               <div key={`market-history-${idx}`} className="flex-1 flex flex-col items-center group relative">
                   <div 
                     className={`w-full rounded-t-sm transition-all duration-500 ${dayData.trend === 'UP' ? 'bg-green-400' : dayData.trend === 'DOWN' ? 'bg-red-400' : 'bg-slate-300'}`} 
                     style={{ height: `${heightPct}%` }}

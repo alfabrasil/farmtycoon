@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { 
-  ArrowUpCircle, Lock, Moon
+  ArrowUpCircle, Lock, Moon, Sun
 } from 'lucide-react';
 
 // Dados e Configuração
@@ -38,7 +38,6 @@ import UnboxingScreen from './components/screens/UnboxingScreen';
 import BarnScreen from './components/screens/BarnScreen';
 import GeneticsLabScreen from './components/screens/GeneticsLabScreen';
 import StoreScreen from './components/screens/StoreScreen';
-import BankScreen from './components/screens/BankScreen';
 import RankingScreen from './components/screens/RankingScreen';
 import SettingsScreen from './components/screens/SettingsScreen';
 import CommunityScreen from './components/screens/CommunityScreen';
@@ -50,13 +49,23 @@ import CockfightScreen from './components/screens/CockfightScreen';
 import HarvestGameScreen from './components/screens/harvest/HarvestGameScreen';
 import { useLanguage } from './contexts/LanguageContext';
 import { useTutorial, TUTORIAL_STEPS } from './contexts/TutorialContext';
+import LandingPageScreen from './components/screens/LandingPageScreen';
 import TutorialOverlay from './components/ui/TutorialOverlay';
 
 // --- APP PRINCIPAL ---
 export default function App() {
   const { t } = useLanguage();
   const { updateGameState, advanceStep, currentStep } = useTutorial();
-  const [session, setSession] = useState(() => localStorage.getItem('farm_session') || 'AUTH');
+  const [session, setSession] = useState(() => localStorage.getItem('farm_session') || 'LANDING');
+  const [playerUsername, setPlayerUsername] = useState(() => localStorage.getItem('farm_username') || '');
+  const [playerProfile, setPlayerProfile] = useState(() => {
+    try {
+      const s = localStorage.getItem('farm_profile');
+      return s ? JSON.parse(s) : null;
+    } catch {
+      return null;
+    }
+  });
   const [balance, setBalance] = useState(() => {
     const val = localStorage.getItem('farm_balance');
     return val === null ? 100 : Number(val); // 100 coins initial
@@ -65,6 +74,35 @@ export default function App() {
     const val = Number(localStorage.getItem('farm_bank_balance'));
     return isNaN(val) ? 0 : val;
   });
+  const [usdBalance, setUsdBalance] = useState(() => {
+    const val = Number(localStorage.getItem('farm_usd_balance'));
+    return isNaN(val) ? 0 : val;
+  });
+  const [walletHistory, setWalletHistory] = useState(() => {
+    try {
+      const s = localStorage.getItem('farm_wallet_history');
+      return s ? JSON.parse(s) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [walletAddresses, setWalletAddresses] = useState(() => {
+    try {
+      const s = localStorage.getItem('farm_wallet_addresses');
+      return s ? JSON.parse(s) : {};
+    } catch {
+      return {};
+    }
+  });
+  const [walletWithdrawAddresses, setWalletWithdrawAddresses] = useState(() => {
+    try {
+      const s = localStorage.getItem('farm_wallet_withdraw_addresses');
+      return s ? JSON.parse(s) : {};
+    } catch {
+      return {};
+    }
+  });
+  const [financialPasswordHash, setFinancialPasswordHash] = useState(() => localStorage.getItem('farm_fin_password_hash') || '');
   const [dayCount, setDayCount] = useState(() => {
     const val = Number(localStorage.getItem('farm_day'));
     return isNaN(val) || val < 1 ? 1 : val;
@@ -131,6 +169,18 @@ export default function App() {
       return [];
     }
   });
+
+  useEffect(() => {
+    if (session !== 'GAME' && session !== 'UNBOXING') return;
+    if (playerUsername) return;
+    const stored = localStorage.getItem('farm_username') || '';
+    if (stored) {
+      setPlayerUsername(stored);
+      return;
+    }
+    setSession('REGISTER');
+    localStorage.setItem('farm_session', 'REGISTER');
+  }, [session, playerUsername]);
 
   const [automations, setAutomations] = useState(() => {
     try {
@@ -283,12 +333,15 @@ export default function App() {
 
   const [isMuted, setIsMuted] = useState(() => localStorage.getItem('farm_muted') === 'true');
   const [fox, setFox] = useState(null); 
+  const [foxSpawnDay, setFoxSpawnDay] = useState(() => Number(localStorage.getItem('farm_fox_spawn_day')) || 0);
+  const [foxSpawnCount, setFoxSpawnCount] = useState(() => Number(localStorage.getItem('farm_fox_spawn_count')) || 0);
   const [lastSpinDay, setLastSpinDay] = useState(() => Number(localStorage.getItem('farm_last_spin_day')) || 0);
 
   const [showQuests, setShowQuests] = useState(false);
   const [newAchievement, setNewAchievement] = useState(null); 
   const [view, setView] = useState('COOP');
   const [isNight, setIsNight] = useState(false);
+  const [isDayTransitioning, setIsDayTransitioning] = useState(false);
   const [legendaryDrop, setLegendaryDrop] = useState(null);
   const [toast, setToast] = useState(null);
   const [floatingTexts, setFloatingTexts] = useState([]);
@@ -306,9 +359,27 @@ export default function App() {
   }, [isMuted]);
 
   useEffect(() => {
+    if (foxSpawnDay !== dayCount) {
+      setFoxSpawnDay(dayCount);
+      setFoxSpawnCount(0);
+      localStorage.setItem('farm_fox_spawn_day', String(dayCount));
+      localStorage.setItem('farm_fox_spawn_count', '0');
+      return;
+    }
+    localStorage.setItem('farm_fox_spawn_day', String(foxSpawnDay));
+    localStorage.setItem('farm_fox_spawn_count', String(foxSpawnCount));
+  }, [dayCount, foxSpawnDay, foxSpawnCount]);
+
+  useEffect(() => {
     localStorage.setItem('farm_session', session);
     localStorage.setItem('farm_balance', balance);
     localStorage.setItem('farm_bank_balance', bankBalance);
+    localStorage.setItem('farm_usd_balance', String(usdBalance));
+    localStorage.setItem('farm_wallet_history', JSON.stringify(walletHistory));
+    localStorage.setItem('farm_wallet_addresses', JSON.stringify(walletAddresses));
+    localStorage.setItem('farm_wallet_withdraw_addresses', JSON.stringify(walletWithdrawAddresses));
+    localStorage.setItem('farm_fin_password_hash', financialPasswordHash || '');
+    localStorage.setItem('farm_profile', JSON.stringify(playerProfile));
     localStorage.setItem('farm_day', dayCount);
     localStorage.setItem('farm_level', level);
     localStorage.setItem('farm_xp', xp);
@@ -330,7 +401,7 @@ export default function App() {
     // Persistência das Novas Features
     localStorage.setItem('farm_skin', currentSkin);
     localStorage.setItem('farm_market_history', JSON.stringify(marketHistory));
-  }, [session, balance, bankBalance, dayCount, level, xp, inventory, chickens, weather, marketPrices, quests, stats, achievements, lastSpinDay, automations, upgrades, marketNews, coopProgress, auctionItems, goldenEggs, currentSkin, marketHistory]);
+  }, [session, balance, bankBalance, usdBalance, walletHistory, walletAddresses, walletWithdrawAddresses, financialPasswordHash, playerProfile, dayCount, level, xp, inventory, chickens, weather, marketPrices, quests, stats, achievements, lastSpinDay, automations, upgrades, marketNews, coopProgress, auctionItems, goldenEggs, currentSkin, marketHistory]);
 
   const showToast = (arg1, arg2 = 'success') => { 
     const message = typeof arg1 === 'object' ? arg1.message : arg1;
@@ -371,18 +442,19 @@ export default function App() {
 
   const handleFoxClick = () => {
     setFox(null);
-    setBalance(prev => prev + 50);
+    setBalance(prev => prev + 10);
     addXp(20);
     playSound('success');
-    showToast(t('fox_caught', [50]), "success");
+    showToast(t('fox_caught', [10]), "success");
   };
 
   useEffect(() => {
     const spawnInterval = setInterval(() => {
       if (upgrades.FENCE) return; 
-      if (session === 'GAME' && !fox && !isNight && Math.random() < 0.3) {
+      if (session === 'GAME' && !fox && !isNight && foxSpawnDay === dayCount && foxSpawnCount < 3 && Math.random() < 0.3) {
         const newFox = { id: uuidv4(), x: Math.random() * 80 + 10, y: Math.random() * 60 + 20 };
         setFox(newFox);
+        setFoxSpawnCount(c => c + 1);
         playSound('fox');
         showToast(t('fox_appeared'), "error");
         setTimeout(() => {
@@ -397,7 +469,7 @@ export default function App() {
       }
     }, 30000);
     return () => clearInterval(spawnInterval);
-  }, [fox, session, isNight, upgrades.FENCE]);
+  }, [fox, session, isNight, upgrades.FENCE, foxSpawnCount, foxSpawnDay, dayCount]);
 
   useEffect(() => {
     if (automations.CLEANSWEEP?.active) {
@@ -538,7 +610,8 @@ export default function App() {
         id: uuidv4(),
         type: listing.type,
         name: t('app_auction_prefix', [t(config.nameKey)]),
-        age_days: listing.age,
+        age_days: 0,
+        adult_threshold: 15,
         last_fed_day: dayCount,
         is_sick: false,
         has_poop: false,
@@ -591,7 +664,14 @@ export default function App() {
   };
 
   const handleSleep = () => {
-    setIsNight(true);
+    if (isDayTransitioning) return;
+    if (!isNight) {
+      setIsNight(true);
+      setChickens(prev => prev.map(c => ({ ...c, is_sleeping: true })));
+      return;
+    }
+
+    setIsDayTransitioning(true);
     setTimeout(() => {
       const nextDay = dayCount + 1;
       setDayCount(nextDay);
@@ -694,7 +774,13 @@ export default function App() {
 
       setChickens(prev => prev.map(c => {
         // ENGENHARIA: Mutantes/Cyber podem ter imunidades genéticas
-        if (c.type === 'MUTANTE') return { ...c, age_days: c.age_days + 1 }; // Mutante nunca adoece, nem faz coco
+        if (c.type === 'MUTANTE') return { ...c, age_days: c.age_days + 1, is_sleeping: false }; // Mutante nunca adoece, nem faz coco
+
+        const adultThreshold = c.adult_threshold || 30;
+        const nextAge = c.age_days + 1;
+        if (nextAge < adultThreshold) {
+          return { ...c, age_days: nextAge, is_sick: false, has_poop: false, is_sleeping: false, last_fed_day: nextDay };
+        }
 
         const isHungry = c.last_fed_day < nextDay;
         const baseSickness = (nextWeather === 'RAINY' && !upgrades.CLIMATE) ? 0.30 : 0.05;
@@ -704,11 +790,12 @@ export default function App() {
         const gotSick = !c.is_starter && !c.immune && !c.is_sick && Math.random() < chanceOfSickness;
         const madePoop = !c.is_sick && Math.random() < 0.5;
         
-        return { ...c, age_days: c.age_days + 1, is_sick: c.is_sick || gotSick, has_poop: hasCleanSweep ? false : (c.has_poop || madePoop) };
+        return { ...c, age_days: nextAge, is_sleeping: false, is_sick: c.is_sick || gotSick, has_poop: hasCleanSweep ? false : (c.has_poop || madePoop) };
       }));
       
       generateDailyQuests();
       setIsNight(false);
+      setIsDayTransitioning(false);
     }, 2000);
   };
 
@@ -894,29 +981,42 @@ export default function App() {
   
   const pendingRewards = quests.some(q => q.completed && !q.claimed);
 
+  const handleLogout = () => {
+    setSession('LANDING');
+    localStorage.setItem('farm_session', 'LANDING');
+  };
+
   return (
     <div className="min-h-screen relative font-sans select-none overflow-hidden bg-slate-100">
-      <TutorialOverlay />
-      {/* ENGENHARIA: Passando skin ID para o background */}
-      <FarmBackground isNight={isNight} weather={weather} skinId={currentSkin} />
-      <FloatingText items={floatingTexts} />
-      {legendaryDrop && <LegendaryDropModal type={legendaryDrop} onClose={() => setLegendaryDrop(null)} />}
-      {showLevelUp && <LevelUpModal newLevel={level} onClose={() => setShowLevelUp(false)} />}
-      {showQuests && <QuestsModal quests={quests} onClose={() => setShowQuests(false)} onClaim={handleClaimQuest} />}
-      
-      {customizingChicken && (
-        <ChickenCustomizer 
-          chicken={customizingChicken} 
-          onClose={() => setCustomizingChicken(null)} 
-          onUpdateChicken={handleUpdateChicken}
-        />
+      {session !== 'LANDING' && (
+        <FarmBackground isNight={isNight} weather={weather} skinId={currentSkin} />
       )}
 
-      {newAchievement && <AchievementModal achievement={newAchievement} onClose={handleCloseAchievement} />}
+      {session === 'GAME' && (
+        <>
+          <TutorialOverlay />
+          <FloatingText items={floatingTexts} />
+          {legendaryDrop && <LegendaryDropModal type={legendaryDrop} onClose={() => setLegendaryDrop(null)} />}
+          {showLevelUp && <LevelUpModal newLevel={level} onClose={() => setShowLevelUp(false)} />}
+          {showQuests && <QuestsModal quests={quests} onClose={() => setShowQuests(false)} onClaim={handleClaimQuest} />}
 
-      {session === 'GAME' && fox && <FoxComponent x={fox.x} y={fox.y} onClick={handleFoxClick} />}
+          {customizingChicken && (
+            <ChickenCustomizer 
+              chicken={customizingChicken} 
+              onClose={() => setCustomizingChicken(null)} 
+              onUpdateChicken={handleUpdateChicken}
+            />
+          )}
 
-      {session === 'AUTH' && <AuthScreen onLogin={() => setSession('UNBOXING')} />}
+          {newAchievement && <AchievementModal achievement={newAchievement} onClose={handleCloseAchievement} />}
+
+          {fox && <FoxComponent x={fox.x} y={fox.y} onClick={handleFoxClick} />}
+        </>
+      )}
+
+      {session === 'LANDING' && <LandingPageScreen onNavigate={(target) => setSession(target)} />}
+      {session === 'AUTH' && <AuthScreen mode="login" onLogin={() => { const u = localStorage.getItem('farm_username') || ''; if (!u) { setSession('REGISTER'); localStorage.setItem('farm_session', 'REGISTER'); return; } setPlayerUsername(u); setSession('UNBOXING'); }} onBackToLanding={() => { setSession('LANDING'); localStorage.setItem('farm_session', 'LANDING'); }} onGoToRegister={() => { setSession('REGISTER'); localStorage.setItem('farm_session', 'REGISTER'); }} />}
+      {session === 'REGISTER' && <AuthScreen mode="register" onRegister={(data) => { if (data?.username) { setPlayerUsername(data.username); localStorage.setItem('farm_username', data.username); } if (data) { setPlayerProfile(data); localStorage.setItem('farm_profile', JSON.stringify(data)); } setSession('UNBOXING'); }} onBackToLanding={() => { setSession('LANDING'); localStorage.setItem('farm_session', 'LANDING'); }} onGoToLogin={() => { setSession('AUTH'); localStorage.setItem('farm_session', 'AUTH'); }} />}
       {session === 'UNBOXING' && <UnboxingScreen onFinish={() => {setChickens([{ id: uuidv4(), type: "GRANJA", name: t('app_starter_name'), age_days: 0, last_fed_day: 1, is_sick: false, has_poop: false, last_collected_day: 0, is_starter: true, immune: true }]); setBalance(50); setInventory(prev=>({...prev, feed:5})); generateDailyQuests(); setSession('GAME');}} />}
       
       {session === 'GAME' && (
@@ -934,10 +1034,10 @@ export default function App() {
                  <div className="fixed bottom-24 right-4 md:bottom-6 md:right-6 z-[70]">
                    <button 
                     onClick={handleSleep} 
-                    disabled={isNight} 
+                    disabled={isDayTransitioning} 
                     className="bg-indigo-600 hover:bg-indigo-700 text-white w-14 h-14 md:w-16 md:h-16 rounded-full shadow-2xl flex items-center justify-center border-4 border-indigo-400 animate-bounce transition-all active:scale-90"
                    >
-                     {isNight ? <span className="animate-spin text-xl">⏳</span> : <Moon size={32} fill="currentColor" />}
+                     {isDayTransitioning ? <span className="animate-spin text-xl">⏳</span> : isNight ? <Sun size={32} fill="currentColor" /> : <Moon size={32} fill="currentColor" />}
                    </button>
                  </div>
 
@@ -963,17 +1063,17 @@ export default function App() {
             ) : view === 'LAB' ? (
               <GeneticsLabScreen onBack={() => setView('COOP')} chickens={chickens} balance={balance} setBalance={setBalance} setChickens={setChickens} maxCapacity={maxCapacity} showToast={showToast} dayCount={dayCount} />
             ) : view === 'SETTINGS' ? (
-              <SettingsScreen onBack={() => setView('COOP')} onReset={handleReset} dayCount={dayCount} isMuted={isMuted} toggleMute={() => setIsMuted(!isMuted)} onPrestige={handlePrestige} canPrestige={balance >= 5000} goldenEggsToGain={Math.floor(balance/5000)} onExportSave={handleExportSave} onImportSave={handleImportSave} />
+              <SettingsScreen onBack={() => setView('COOP')} onReset={handleReset} onLogout={handleLogout} dayCount={dayCount} isMuted={isMuted} toggleMute={() => setIsMuted(!isMuted)} onPrestige={handlePrestige} canPrestige={balance >= 5000} goldenEggsToGain={Math.floor(balance/5000)} onExportSave={handleExportSave} onImportSave={handleImportSave} walletWithdrawAddresses={walletWithdrawAddresses} setWalletWithdrawAddresses={setWalletWithdrawAddresses} financialPasswordHash={financialPasswordHash} setFinancialPasswordHash={setFinancialPasswordHash} />
             ) : view === 'RANKING' ? (
               <RankingScreen onBack={() => setView('COOP')} balance={balance} />
             ) : view === 'COMMUNITY' ? (
               <CommunityScreen onBack={() => setView('COOP')} onSimulateReferral={handleSimulateReferral} referralHistory={referralHistory} coopProgress={coopProgress} onContributeCoop={handleContributeCoop} onBuyAuction={handleBuyAuction} onSellAuction={handleSellAuction} chickens={chickens} balance={balance} maxCapacity={maxCapacity} auctionItems={auctionItems} />
             ) : view === 'PROFILE' ? (
-              <ProfileScreen onBack={() => setView('COOP')} stats={stats} achievements={achievements} level={level} xp={xp} xpToNextLevel={level*100} goldenEggs={goldenEggs} />
+              <ProfileScreen onBack={() => setView('COOP')} username={playerUsername} stats={stats} achievements={achievements} level={level} xp={xp} xpToNextLevel={level*100} goldenEggs={goldenEggs} />
             ) : view === 'WHEEL' ? (
               <WheelScreen onBack={() => setView('COOP')} onSpin={handleSpinReward} canSpin={canSpinWheel()} balance={balance} />
-            ) : view === 'BANK' ? (
-              <BankScreen onBack={() => setView('COOP')} balance={balance} setBalance={setBalance} bankBalance={bankBalance} setBankBalance={setBankBalance} />
+            ) : view === 'WALLET' || view === 'BANK' ? (
+              <WalletScreen onBack={() => setView('COOP')} balance={balance} setBalance={setBalance} usdBalance={usdBalance} setUsdBalance={setUsdBalance} walletHistory={walletHistory} setWalletHistory={setWalletHistory} walletAddresses={walletAddresses} setWalletAddresses={setWalletAddresses} walletWithdrawAddresses={walletWithdrawAddresses} financialPasswordHash={financialPasswordHash} username={playerUsername} profile={playerProfile} showToast={showToast} />
             ) : view === 'CHASE' ? (
               <ChickenChaseScreen onBack={() => setView('COOP')} balance={balance} setBalance={setBalance} showToast={showToast} />
             ) : view === 'RINHA' ? (
@@ -981,7 +1081,7 @@ export default function App() {
             ) : view === 'HARVEST' ? (
               <HarvestGameScreen onBack={() => setView('COOP')} balance={balance} setBalance={setBalance} showToast={showToast} chickens={chickens} />
             ) : (
-              <WalletScreen onBack={() => setView('COOP')} balance={balance} setBalance={setBalance} showToast={showToast} addFloatingText={addFloatingText} />
+              <WalletScreen onBack={() => setView('COOP')} balance={balance} setBalance={setBalance} usdBalance={usdBalance} setUsdBalance={setUsdBalance} walletHistory={walletHistory} setWalletHistory={setWalletHistory} walletAddresses={walletAddresses} setWalletAddresses={setWalletAddresses} walletWithdrawAddresses={walletWithdrawAddresses} financialPasswordHash={financialPasswordHash} username={playerUsername} profile={playerProfile} showToast={showToast} />
             )}
           </div>
         </div>
