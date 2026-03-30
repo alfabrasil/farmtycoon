@@ -4,6 +4,7 @@ import { MINIGAME_CONFIG } from '../../data/gameConfig';
 import { playSound } from '../../utils/audioSystem';
 import { useLanguage } from '../../contexts/LanguageContext';
 import CockfightScreen from './CockfightScreen';
+import ChiIcon from '../ui/ChiIcon';
 
 const ChickenChaseScreen = ({ onBack, balance, setBalance, showToast }) => {
   const { t } = useLanguage();
@@ -14,6 +15,7 @@ const ChickenChaseScreen = ({ onBack, balance, setBalance, showToast }) => {
   const [soloDoors, setSoloDoors] = useState([]);
   const [soloAttempts, setSoloAttempts] = useState(0);
   const [soloChickenDoor, setSoloChickenDoor] = useState(null);
+  const [soloBet, setSoloBet] = useState(MINIGAME_CONFIG.SOLO_BET);
 
   // --- STATE: PVP MODE ---
   const [pvpState, setPvpState] = useState('LOBBY'); // LOBBY, PLAYING, WON, LOST
@@ -21,6 +23,11 @@ const ChickenChaseScreen = ({ onBack, balance, setBalance, showToast }) => {
   const [currentChallenge, setCurrentChallenge] = useState(null);
   const [pvpTurn, setPvpTurn] = useState(null); // 'PLAYER', 'OPPONENT'
   const [pvpChickenDoor, setPvpChickenDoor] = useState(null);
+  const [pvpRoomOpen, setPvpRoomOpen] = useState(false);
+  const [pvpRoomBet, setPvpRoomBet] = useState(10);
+  const [pvpRoomCode, setPvpRoomCode] = useState('');
+  const [pvpJoinCode, setPvpJoinCode] = useState('');
+  const [pvpInvite, setPvpInvite] = useState(null);
   
   // Mock Challenges Book
   const [challenges, setChallenges] = useState([
@@ -30,15 +37,67 @@ const ChickenChaseScreen = ({ onBack, balance, setBalance, showToast }) => {
     { id: 'c4', player: 'RichDuck', bet: 500, avatar: '🦆' },
     { id: 'c5', player: t('harvest_bot_1'), bet: 20, avatar: '🐔' },
   ]);
+  
+  useEffect(() => {
+    try {
+      const url = new URL(window.location.href);
+      const isInvite = url.searchParams.get('pvpRoom') === '1';
+      const betRaw = url.searchParams.get('bet');
+      const code = url.searchParams.get('code');
+      const bet = betRaw ? Number(betRaw) : null;
+      if (isInvite && code && Number.isFinite(bet) && bet > 0) {
+        setActiveTab('PVP');
+        setPvpInvite({ code, bet });
+      }
+    } catch (e) {}
+  }, []);
+
+  const makeRoomCode = () => Math.random().toString(36).slice(2, 8).toUpperCase();
+
+  const buildInviteUrl = (code, bet) => {
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set('pvpRoom', '1');
+      url.searchParams.set('code', code);
+      url.searchParams.set('bet', String(bet));
+      return url.toString();
+    } catch (e) {
+      return '';
+    }
+  };
+
+  const addChallengeToBook = (challenge) => {
+    setChallenges(prev => {
+      if (prev.some(c => c.id === challenge.id)) return prev;
+      return [challenge, ...prev];
+    });
+  };
+
+  const shareOrCopy = async (text) => {
+    try {
+      if (navigator.share) {
+        await navigator.share({ text, url: text });
+        return;
+      }
+    } catch (e) {}
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+        showToast(t('chase_room_copied') || 'Link copiado!', 'success');
+        return;
+      }
+    } catch (e) {}
+    showToast(t('chase_room_copy_fail') || 'Não foi possível copiar. Selecione e copie manualmente.', 'error');
+  };
 
   // --- SOLO FUNCTIONS ---
   const startSoloGame = () => {
-    if (balance < MINIGAME_CONFIG.SOLO_BET) {
+    if (balance < soloBet) {
       showToast(t('msg_insufficient_funds'), 'error');
       return;
     }
     
-    setBalance(prev => prev - MINIGAME_CONFIG.SOLO_BET);
+    setBalance(prev => prev - soloBet);
     setSoloState('PLAYING');
     setSoloAttempts(0);
     
@@ -65,16 +124,16 @@ const ChickenChaseScreen = ({ onBack, balance, setBalance, showToast }) => {
 
     if (isChicken) {
       setSoloState('WON');
-      const reward = Math.floor(MINIGAME_CONFIG.SOLO_BET * MINIGAME_CONFIG.SOLO_REWARD_MULTIPLIER);
+      const reward = Math.floor(soloBet * MINIGAME_CONFIG.SOLO_REWARD_MULTIPLIER);
       setBalance(prev => prev + reward);
-      playSound('success');
+      playSound('victory');
       showToast(t('chase_won_msg', [reward]), 'success');
     } else {
       const newAttempts = soloAttempts + 1;
       setSoloAttempts(newAttempts);
       if (newAttempts >= MINIGAME_CONFIG.SOLO_ATTEMPTS) {
         setSoloState('LOST');
-        playSound('error');
+        playSound('defeat');
         showToast(t('chase_lost'), 'error');
         // Reveal chicken
         const revealedDoors = newDoors.map((d, i) => i === soloChickenDoor ? { ...d, status: 'OPEN', content: 'CHICKEN' } : d);
@@ -127,11 +186,11 @@ const ChickenChaseScreen = ({ onBack, balance, setBalance, showToast }) => {
         setPvpState('WON');
         const winAmount = Math.floor(currentChallenge.bet + (currentChallenge.bet * (1 - MINIGAME_CONFIG.PVP_BURN_FEE)));
         setBalance(prev => prev + winAmount);
-        playSound('success');
+        playSound('victory');
         showToast(t('chase_won_msg', [winAmount]), 'success');
       } else {
         setPvpState('LOST');
-        playSound('error');
+        playSound('defeat');
         showToast(t('chase_found_chicken', [currentChallenge.player]), 'error');
       }
     } else {
@@ -197,11 +256,11 @@ const ChickenChaseScreen = ({ onBack, balance, setBalance, showToast }) => {
   return (
     <div className="animate-in slide-in-from-bottom-10 fade-in pb-24 md:pb-0 min-h-screen bg-slate-100">
       {/* Header */}
-      <div className="bg-slate-900 text-white p-4 rounded-b-3xl shadow-xl mb-6 sticky top-0 z-20">
+      <div className="bg-slate-900 text-white p-4 rounded-3xl shadow-xl mb-6 z-20">
         <div className="flex items-center justify-between mb-4">
           <button onClick={onBack} className="bg-white/10 p-2 rounded-full hover:bg-white/20"><X size={20}/></button>
           <h1 className="text-xl font-black flex items-center gap-2"><Dices className="text-pink-500"/> {t('chase_title')}</h1>
-          <div className="bg-yellow-500 text-slate-900 px-3 py-1 rounded-full font-bold text-sm">💰 {balance}</div>
+          <div className="bg-yellow-500 text-slate-900 px-3 py-1 rounded-full font-bold text-sm inline-flex items-center gap-1"><ChiIcon className="w-5 h-5" /> {balance}</div>
         </div>
         
         <div className="flex p-1 bg-slate-800 rounded-xl">
@@ -238,11 +297,24 @@ const ChickenChaseScreen = ({ onBack, balance, setBalance, showToast }) => {
                 <div className="bg-slate-50 p-4 rounded-xl mb-6 border border-slate-200">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-slate-500">{t('chase_bet')}</span>
-                    <span className="font-bold text-slate-800">{MINIGAME_CONFIG.SOLO_BET} 💰</span>
+                    <span className="font-bold text-slate-800 inline-flex items-center gap-1">{soloBet} <ChiIcon className="w-4 h-4" /></span>
                   </div>
-                  <div className="flex justify-between items-center text-green-600">
+                  <div className="flex justify-between items-center text-green-600 mb-3">
                     <span className="">{t('chase_prize')}</span>
-                    <span className="font-black text-lg">+{Math.floor(MINIGAME_CONFIG.SOLO_BET * MINIGAME_CONFIG.SOLO_REWARD_MULTIPLIER - MINIGAME_CONFIG.SOLO_BET)} ({t('chase_total')} {Math.floor(MINIGAME_CONFIG.SOLO_BET * MINIGAME_CONFIG.SOLO_REWARD_MULTIPLIER)}) 💰</span>
+                    <span className="font-black text-lg inline-flex items-center gap-1">+{Math.floor(soloBet * MINIGAME_CONFIG.SOLO_REWARD_MULTIPLIER - soloBet)} ({t('chase_total')} {Math.floor(soloBet * MINIGAME_CONFIG.SOLO_REWARD_MULTIPLIER)}) <ChiIcon className="w-4 h-4" /></span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[10, 50, 100].map(v => (
+                      <button
+                        key={`solo-bet-${v}`}
+                        onClick={() => setSoloBet(v)}
+                        className={`py-2 rounded-lg font-black text-xs transition-all ${
+                          soloBet === v ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+                        }`}
+                      >
+                        {v} CHI
+                      </button>
+                    ))}
                   </div>
                 </div>
 
@@ -288,12 +360,147 @@ const ChickenChaseScreen = ({ onBack, balance, setBalance, showToast }) => {
                   <div className="relative z-10">
                     <h2 className="text-2xl font-black mb-1">{t('chase_pvp_title')}</h2>
                     <p className="text-purple-200 text-sm mb-4">{t('chase_pvp_desc')}</p>
-                    <button className="bg-white text-purple-700 px-4 py-2 rounded-lg font-bold text-sm shadow-md hover:bg-purple-50 transition-all flex items-center gap-2">
-                       <Play size={16}/> {t('chase_create_bet')}
-                    </button>
+                    <div className="flex flex-wrap gap-2">
+                      <button onClick={() => setPvpRoomOpen(true)} className="bg-white text-purple-700 px-4 py-2 rounded-lg font-bold text-sm shadow-md hover:bg-purple-50 transition-all flex items-center gap-2">
+                        <Play size={16}/> {t('chase_room_create') || t('chase_create_bet')}
+                      </button>
+                      <button onClick={() => setPvpRoomOpen(true)} className="bg-purple-700/60 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-md hover:bg-purple-700/70 transition-all flex items-center gap-2">
+                        <DoorOpen size={16}/> {t('chase_room_join') || 'Entrar com código'}
+                      </button>
+                    </div>
                   </div>
                   <div className="absolute -right-4 -bottom-4 text-purple-800 opacity-50"><Users2 size={120}/></div>
                 </div>
+
+                {pvpInvite && (
+                  <div className="bg-white rounded-3xl p-5 shadow-xl border-b-4 border-purple-100">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="text-[10px] font-black text-purple-600 uppercase tracking-widest">{t('chase_room_invite_title') || 'Convite de Sala'}</div>
+                        <div className="font-black text-slate-800 mt-1">{t('chase_room_invite_desc', [pvpInvite.bet]) || `Aposta: ${pvpInvite.bet} CHI`}</div>
+                        <div className="text-[10px] text-slate-500 font-bold mt-1">CODE: {pvpInvite.code}</div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            addChallengeToBook({ id: `room_${pvpInvite.code}`, player: `${t('chase_room_friend') || 'Amigo'} (${pvpInvite.code})`, bet: pvpInvite.bet, avatar: '🤝' });
+                            setPvpInvite(null);
+                            showToast(t('chase_room_added') || 'Sala adicionada!', 'success');
+                          }}
+                          className="bg-purple-600 text-white px-3 py-2 rounded-xl font-black text-xs uppercase shadow-lg active:scale-95 transition-all"
+                        >
+                          {t('chase_room_accept') || 'Aceitar'}
+                        </button>
+                        <button
+                          onClick={() => setPvpInvite(null)}
+                          className="bg-slate-100 text-slate-700 px-3 py-2 rounded-xl font-black text-xs uppercase shadow-sm active:scale-95 transition-all"
+                        >
+                          {t('chase_room_decline') || 'Recusar'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {pvpRoomOpen && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/60" onClick={() => setPvpRoomOpen(false)} />
+                    <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-100 p-5">
+                      <div className="flex justify-between items-center mb-4">
+                        <div className="font-black text-slate-800 text-lg">{t('chase_room_title') || 'Sala PVP'}</div>
+                        <button onClick={() => setPvpRoomOpen(false)} className="p-2 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors">
+                          <X size={18} className="text-slate-600" />
+                        </button>
+                      </div>
+
+                      <div className="space-y-4">
+                        <div>
+                          <div className="text-[10px] font-black text-slate-400 uppercase mb-2">{t('chase_room_bet') || 'Aposta'}</div>
+                          <div className="grid grid-cols-3 gap-2">
+                            {[10, 50, 100].map(v => (
+                              <button
+                                key={`room-bet-${v}`}
+                                onClick={() => setPvpRoomBet(v)}
+                                className={`py-3 rounded-xl font-black text-xs transition-all ${
+                                  pvpRoomBet === v ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100'
+                                }`}
+                              >
+                                {v} CHI
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              const code = makeRoomCode();
+                              setPvpRoomCode(code);
+                              const url = buildInviteUrl(code, pvpRoomBet);
+                              addChallengeToBook({ id: `room_${code}`, player: `${t('chase_room_you') || 'Você'} (${code})`, bet: pvpRoomBet, avatar: '🏠' });
+                              showToast(t('chase_room_created') || 'Sala criada!', 'success');
+                              if (url) shareOrCopy(url);
+                            }}
+                            className="flex-1 bg-purple-600 text-white py-3 rounded-2xl font-black shadow-lg uppercase active:scale-95 transition-all"
+                          >
+                            {t('chase_room_create') || 'Criar Sala'}
+                          </button>
+                        </div>
+
+                        {pvpRoomCode && (
+                          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
+                            <div className="text-[10px] font-black text-slate-400 uppercase">{t('chase_room_code') || 'Código'}</div>
+                            <div className="flex items-center justify-between gap-3 mt-1">
+                              <div className="font-black text-slate-900 text-lg tracking-widest">{pvpRoomCode}</div>
+                              <button
+                                onClick={() => {
+                                  const url = buildInviteUrl(pvpRoomCode, pvpRoomBet);
+                                  if (url) shareOrCopy(url);
+                                }}
+                                className="bg-slate-900 text-white px-3 py-2 rounded-xl font-black text-xs uppercase"
+                              >
+                                {t('chase_room_share') || 'Compartilhar'}
+                              </button>
+                            </div>
+                            <div className="text-[10px] text-slate-500 font-bold mt-2 break-all">
+                              {buildInviteUrl(pvpRoomCode, pvpRoomBet)}
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
+                          <div className="text-[10px] font-black text-slate-400 uppercase mb-2">{t('chase_room_join') || 'Entrar com código'}</div>
+                          <div className="flex gap-2">
+                            <input
+                              value={pvpJoinCode}
+                              onChange={(e) => setPvpJoinCode(e.target.value.toUpperCase())}
+                              placeholder={t('chase_room_code_placeholder') || 'EX: A1B2C3'}
+                              className="flex-1 px-3 py-2 rounded-xl border border-slate-200 font-black text-slate-800"
+                            />
+                            <button
+                              onClick={() => {
+                                const code = (pvpJoinCode || '').trim().toUpperCase();
+                                if (!code) {
+                                  showToast(t('chase_room_code_invalid') || 'Código inválido', 'error');
+                                  return;
+                                }
+                                addChallengeToBook({ id: `room_${code}`, player: `${t('chase_room_friend') || 'Amigo'} (${code})`, bet: pvpRoomBet, avatar: '🤝' });
+                                showToast(t('chase_room_added') || 'Sala adicionada!', 'success');
+                                setPvpJoinCode('');
+                              }}
+                              className="bg-purple-600 text-white px-3 py-2 rounded-xl font-black text-xs uppercase"
+                            >
+                              {t('chase_room_add') || 'Adicionar'}
+                            </button>
+                          </div>
+                          <div className="text-[10px] text-slate-500 font-bold mt-2">
+                            {t('chase_room_join_hint') || 'Dica: se você abriu um link de convite, ele aparece automaticamente acima.'}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <div className="space-y-3">
                   <h3 className="font-black text-slate-700 ml-2">{t('chase_bet_book')}</h3>
@@ -303,7 +510,7 @@ const ChickenChaseScreen = ({ onBack, balance, setBalance, showToast }) => {
                         <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-xl">{c.avatar}</div>
                         <div>
                           <div className="font-bold text-slate-800 text-sm">{c.player}</div>
-                          <div className="text-xs text-slate-500">{t('chase_bet')}: <span className="font-black text-yellow-600">{c.bet} 💰</span></div>
+                          <div className="text-xs text-slate-500">{t('chase_bet')}: <span className="font-black text-yellow-600 inline-flex items-center gap-1">{c.bet} <ChiIcon className="w-3.5 h-3.5" /></span></div>
                         </div>
                       </div>
                       <button onClick={() => joinChallenge(c)} className="bg-purple-500 text-white px-4 py-2 rounded-xl font-bold text-xs shadow-md border-b-2 border-purple-700 hover:bg-purple-600 active:border-b-0 active:translate-y-0.5">

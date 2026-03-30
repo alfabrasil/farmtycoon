@@ -286,7 +286,7 @@ const BattleVisualizer = ({ matchData, playerRooster, onComplete }) => {
           className="relative flex flex-col items-center w-1/3"
         >
           <RoosterSprite 
-            color={RINHA_CONFIG.COLORS[playerRooster.color].hex} 
+            colorKey={playerRooster.color} 
             element={playerRooster.element}
             size={window.innerWidth < 768 ? 80 : 120}
           />
@@ -328,7 +328,7 @@ const BattleVisualizer = ({ matchData, playerRooster, onComplete }) => {
           className="relative flex flex-col items-center w-1/3"
         >
           <RoosterSprite 
-            color={RINHA_CONFIG.COLORS[matchData.cpu.color].hex} 
+            colorKey={matchData.cpu.color} 
             element={matchData.cpu.element}
             size={window.innerWidth < 768 ? 80 : 120}
             isOpponent

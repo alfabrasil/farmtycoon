@@ -1,15 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { X, Swords, Shield, Zap, Target, Coins, Trophy, Info, AlertTriangle, Play, ChevronRight, RefreshCw, History, DollarSign, TrendingUp } from 'lucide-react';
+import { X, Swords, Shield, Zap, Target, Coins, Trophy, Info, AlertTriangle, Play, ChevronRight, RefreshCw, History, DollarSign, TrendingUp, ShoppingBag } from 'lucide-react';
 import { RINHA_CONFIG } from '../../data/gameConfig';
 import { playSound } from '../../utils/audioSystem';
 import { useLanguage } from '../../contexts/LanguageContext';
 import RinhaEngine from '../../services/RinhaEngine';
-import BattleVisualizer from './rinha/BattleVisualizer';
+import InteractiveBattle from './rinha/InteractiveBattle';
 import RoosterSprite from './rinha/RoosterSprite';
+import RoosterCycler from '../ui/RoosterCycler';
+import ChiIcon from '../ui/ChiIcon';
 
 const CockfightScreen = ({ onBack, balance, setBalance, showToast }) => {
   const { t } = useLanguage();
+  const ACTIVE_BATTLE_KEY = 'rinha_active_battle_v1';
   const [rooster, setRooster] = useState(() => {
     try {
       const saved = localStorage.getItem('farm_rooster');
@@ -20,13 +23,75 @@ const CockfightScreen = ({ onBack, balance, setBalance, showToast }) => {
     }
   });
 
-  const [gameState, setGameState] = useState('MENU'); // MENU, SELECTING_ROOSTER, LOBBY, BATTLING, RESULT, HISTORY
+  const [gameState, setGameState] = useState('MENU'); // MENU, SELECTING_ROOSTER, TEAM_3V3, SHOP, BATTLING, RESULT, HISTORY
   const [selectedElement, setSelectedElement] = useState('FOGO');
   const [selectedColor, setSelectedColor] = useState('VERMELHO');
   const [bet, setBet] = useState(10);
+  const [battleMode, setBattleMode] = useState('1v1');
   const [isProcessing, setIsProcessing] = useState(false);
   const [matchResult, setMatchResult] = useState(null);
   const [history, setHistory] = useState([]);
+  const [activeBattle, setActiveBattle] = useState(() => {
+    try {
+      const saved = localStorage.getItem('rinha_active_battle_v1');
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      return null;
+    }
+  });
+  const battleStateRef = useRef(null);
+  const [team3v3, setTeam3v3] = useState(() => {
+    try {
+      const saved = localStorage.getItem('rinha_team_3v3');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length === 3) return parsed;
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  });
+  const balanceRef = useRef(balance);
+
+  useEffect(() => {
+    balanceRef.current = balance;
+  }, [balance]);
+  
+  const [inventory, setInventory] = useState(() => {
+    const defaults = [
+      { id: 'hp_potion', name: 'HP Potion', icon: '🧪', type: 'hp', value: 50, count: 0, price: 50 },
+      { id: 'mp_potion', name: 'Energy Potion', icon: '⚡', type: 'energy', value: 50, count: 0, price: 30 },
+      { id: 'shield_item', name: 'Shield', icon: '🛡️', type: 'shield', value: 90, count: 0, price: 50 }
+    ];
+    try {
+      const saved = localStorage.getItem('rinha_inventory');
+      if (!saved) return defaults;
+      const parsed = JSON.parse(saved);
+      if (!Array.isArray(parsed)) return defaults;
+
+      const savedById = new Map(parsed.map(i => [i?.id, i]));
+      const normalized = defaults.map(d => {
+        const s = savedById.get(d.id);
+        if (!s) return d;
+        return { ...d, count: Number.isFinite(s.count) ? s.count : d.count };
+      });
+
+      parsed.forEach(i => {
+        if (!i?.id) return;
+        if (normalized.some(x => x.id === i.id)) return;
+        normalized.push(i);
+      });
+
+      return normalized;
+    } catch (e) {
+      return defaults;
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem('rinha_inventory', JSON.stringify(inventory));
+  }, [inventory]);
 
   useEffect(() => {
     if (rooster) {
@@ -35,8 +100,49 @@ const CockfightScreen = ({ onBack, balance, setBalance, showToast }) => {
   }, [rooster]);
 
   useEffect(() => {
+    if (!team3v3) return;
+    localStorage.setItem('rinha_team_3v3', JSON.stringify(team3v3));
+  }, [team3v3]);
+
+  useEffect(() => {
+    if (!rooster) return;
+    if (team3v3) return;
+    setTeam3v3([
+      { ...rooster, slot: 1 },
+      { ...rooster, slot: 2, element: 'TERRA' },
+      { ...rooster, slot: 3, element: 'AGUA' }
+    ]);
+  }, [rooster, team3v3]);
+
+  useEffect(() => {
     loadHistory();
   }, []);
+
+  const persistActiveBattle = (battleState) => {
+    if (!battleState || !matchResult) return;
+    const payload = {
+      matchData: matchResult,
+      bet,
+      battleMode,
+      team3v3,
+      rooster,
+      inventory,
+      battleState,
+      savedAt: Date.now()
+    };
+    setActiveBattle(payload);
+    try {
+      localStorage.setItem(ACTIVE_BATTLE_KEY, JSON.stringify(payload));
+    } catch (e) {}
+  };
+
+  const clearActiveBattle = () => {
+    setActiveBattle(null);
+    battleStateRef.current = null;
+    try {
+      localStorage.removeItem(ACTIVE_BATTLE_KEY);
+    } catch (e) {}
+  };
 
   const loadHistory = async () => {
     const data = await RinhaEngine.getHistory(20);
@@ -66,16 +172,42 @@ const CockfightScreen = ({ onBack, balance, setBalance, showToast }) => {
       return;
     }
 
+    if (battleMode === '3v3') {
+      if (!team3v3 || team3v3.length !== 3) {
+        showToast('Selecione seu time 3V3 antes de lutar.', 'error');
+        return;
+      }
+      const invalid = team3v3.some(r => !r || !r.element || !r.color);
+      if (invalid) {
+        showToast('Seu time 3V3 está incompleto.', 'error');
+        return;
+      }
+    }
+
     setIsProcessing(true);
     try {
-      const result = await RinhaEngine.processBattle({
-        element: rooster.element,
-        color: rooster.color,
-        betAmount: bet
-      });
+      clearActiveBattle();
+      // Setup Initial Match Data for Interactive Battle
+      // We deduct the bet immediately
+      setBalance(prev => prev - bet);
       
-      setMatchResult(result);
-      setBalance(result.financial.newBalance);
+      const elements = Object.keys(RINHA_CONFIG.ELEMENTS);
+      const colors = Object.keys(RINHA_CONFIG.COLORS);
+      const arena = RINHA_CONFIG.ARENAS[Math.floor(Math.random() * RINHA_CONFIG.ARENAS.length)];
+      
+      const cpuRooster = {
+        element: elements[Math.floor(Math.random() * elements.length)],
+        color: colors[Math.floor(Math.random() * colors.length)],
+        level: rooster.level || 1
+      };
+
+      const matchData = {
+        arena,
+        cpu: cpuRooster,
+        betAmount: bet
+      };
+      
+      setMatchResult(matchData);
       setGameState('BATTLING');
       playSound('game_start');
     } catch (error) {
@@ -85,17 +217,86 @@ const CockfightScreen = ({ onBack, balance, setBalance, showToast }) => {
     }
   };
 
-  const onBattleComplete = () => {
+  const updateTeamSlot = (idx, patch) => {
+    setTeam3v3(prev => {
+      const base = Array.isArray(prev) && prev.length === 3 ? prev : [
+        { ...rooster, slot: 1 },
+        { ...rooster, slot: 2, element: 'TERRA' },
+        { ...rooster, slot: 3, element: 'AGUA' }
+      ];
+      return base.map((r, i) => i === idx ? { ...r, ...patch } : r);
+    });
+  };
+
+  const onBattleComplete = (resultString) => { // 'WIN', 'LOSS', 'DRAW'
+    let payout = 0;
+    if (resultString === 'WIN') payout = Math.floor(bet * 1.8);
+    else if (resultString === 'DRAW') payout = bet;
+    
+    const newBalance = balanceRef.current + payout;
+    setBalance(newBalance);
+
+    const finalResult = {
+      ...matchResult,
+      result: resultString,
+      financial: {
+        bet,
+        payout,
+        profit: payout - bet,
+        newBalance
+      }
+    };
+    
+    setMatchResult(finalResult);
     setGameState('RESULT');
-    if (matchResult.result === 'WIN') {
+    clearActiveBattle();
+    
+    if (resultString === 'WIN') {
       setRooster(prev => ({ ...prev, wins: prev.wins + 1, level: Math.floor((prev.wins + 1) / 5) + 1 }));
-      playSound('success');
-    } else if (matchResult.result === 'DRAW') {
+      playSound('victory');
+    } else if (resultString === 'DRAW') {
       playSound('neutral');
     } else {
-      playSound('error');
+      playSound('defeat');
     }
+    
+    // Save Match to local storage
+    try {
+      const savedMatches = JSON.parse(localStorage.getItem('farm_matches_history') || '[]');
+      savedMatches.unshift({
+        id: Date.now().toString(),
+        result: resultString,
+        bet_amount: bet,
+        payout: payout,
+        created_at: new Date().toISOString()
+      });
+      localStorage.setItem('farm_matches_history', JSON.stringify(savedMatches.slice(0, 50)));
+    } catch(e) {}
+
     loadHistory();
+  };
+
+  const buyItem = (itemId) => {
+    const item = inventory.find(i => i.id === itemId);
+    if (balance < item.price) {
+      showToast('Insufficient CHI!', 'error');
+      return;
+    }
+    setBalance(prev => prev - item.price);
+    setInventory(prev => prev.map(i => i.id === itemId ? { ...i, count: i.count + 1 } : i));
+    playSound('cash');
+    showToast(`${item.name} acquired!`, 'success');
+  };
+
+  const handleUseItem = (itemId) => {
+    setInventory(prev => prev.map(i => i.id === itemId ? { ...i, count: Math.max(0, i.count - 1) } : i));
+  };
+
+  const handleBack = () => {
+    if (gameState === 'BATTLING' && matchResult && battleStateRef.current) {
+      persistActiveBattle(battleStateRef.current);
+    }
+    onBack();
   };
 
   const renderFinancialSummary = () => {
@@ -188,7 +389,7 @@ const CockfightScreen = ({ onBack, balance, setBalance, showToast }) => {
     return (
       <div className="p-6 h-full flex flex-col">
         <div className="flex justify-between items-center mb-8">
-          <button onClick={onBack} className="p-2 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors">
+        <button onClick={handleBack} className="p-2 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors">
             <X className="text-slate-600" />
           </button>
           <div className="text-right">
@@ -200,9 +401,7 @@ const CockfightScreen = ({ onBack, balance, setBalance, showToast }) => {
         </div>
 
         <div className="flex-1 flex flex-col items-center justify-center text-center space-y-6">
-          <div className="w-32 h-32 bg-red-50 rounded-full flex items-center justify-center text-7xl shadow-inner border-4 border-red-100 animate-bounce">
-            🐓
-          </div>
+          <RoosterCycler size={120} />
           <div className="space-y-2">
             <h3 className="font-black text-slate-800 text-2xl uppercase">{t('cockfight_no_fighter')}</h3>
             <p className="text-slate-500 font-medium max-w-[250px] mx-auto">
@@ -215,8 +414,8 @@ const CockfightScreen = ({ onBack, balance, setBalance, showToast }) => {
               <span className="font-black text-slate-700 uppercase flex items-center gap-2">
                 <Coins className="text-yellow-500" /> {t('cockfight_investment')}
               </span>
-              <span className="bg-yellow-500 text-white font-black px-3 py-1 rounded-full text-sm">
-                {RINHA_CONFIG.ROOSTER_PRICE} RC
+              <span className="bg-yellow-500 text-white font-black px-3 py-1 rounded-full text-sm inline-flex items-center gap-1">
+                <ChiIcon className="w-4 h-4" /> {RINHA_CONFIG.ROOSTER_PRICE} CHI
               </span>
             </div>
             <button onClick={buyRooster} className="w-full bg-red-600 hover:bg-red-700 text-white py-4 rounded-2xl font-black text-lg shadow-xl shadow-red-200 border-b-4 border-red-800 active:border-b-0 active:translate-y-1 transition-all uppercase">
@@ -231,7 +430,7 @@ const CockfightScreen = ({ onBack, balance, setBalance, showToast }) => {
   return (
     <div className="p-4 md:p-6 h-full flex flex-col max-w-5xl mx-auto w-full">
       <div className="flex justify-between items-center mb-4 md:mb-8 shrink-0">
-        <button onClick={onBack} className="p-2 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors">
+        <button onClick={handleBack} className="p-2 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors">
           <X className="text-slate-600 w-5 h-5 md:w-6 md:h-6" />
         </button>
         <div className="text-right flex items-center gap-2 md:gap-4">
@@ -253,58 +452,89 @@ const CockfightScreen = ({ onBack, balance, setBalance, showToast }) => {
             {gameState === 'MENU' && (
               <div className="space-y-6 animate-in fade-in duration-500">
                 {/* Stats do Galo Atual */}
-                <div className="bg-white rounded-3xl p-6 shadow-xl border-b-4 border-slate-200">
-                  <div className="flex justify-between items-start mb-6">
-                    <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center border-2 border-slate-100 shadow-sm overflow-hidden">
+                <div className="bg-white rounded-3xl p-4 md:p-6 shadow-xl border-b-4 border-slate-200">
+                  <div className="flex justify-between items-start mb-6 gap-2">
+                    <div className="flex items-center gap-2 md:gap-4">
+                      <div className="w-12 h-12 md:w-16 md:h-16 bg-slate-50 rounded-2xl flex items-center justify-center border-2 border-slate-100 shadow-sm overflow-hidden shrink-0">
                         <RoosterSprite 
-                          color={RINHA_CONFIG.COLORS[rooster.color].hex} 
+                          colorKey={rooster.color} 
                           element={rooster.element} 
-                          size={64} 
+                          size={48} 
                         />
                       </div>
                       <div>
-                        <h3 className="font-black text-slate-800 text-xl">{t('cockfight_current_fighter')}</h3>
-                        <div className="flex items-center gap-2">
-                          <span className="bg-red-600 text-white text-[10px] px-2 py-0.5 rounded-full font-black uppercase">{t('cockfight_level')} {rooster.level}</span>
-                          <span className="text-xs font-bold text-slate-400">{t('cockfight_wins_label', [rooster.wins])}</span>
+                        <h3 className="font-black text-slate-800 text-sm md:text-xl leading-tight">{t('cockfight_current_fighter')}</h3>
+                        <div className="flex items-center gap-1 md:gap-2 mt-1">
+                          <span className="bg-red-600 text-white text-[8px] md:text-[10px] px-2 py-0.5 rounded-full font-black uppercase">{t('cockfight_level')} {rooster.level}</span>
+                          <span className="text-[10px] md:text-xs font-bold text-slate-400">{t('cockfight_wins_label', [rooster.wins])}</span>
                         </div>
                       </div>
                     </div>
-                    <button onClick={() => setGameState('SELECTING_ROOSTER')} className="bg-slate-100 hover:bg-slate-200 p-2 rounded-xl transition-colors">
-                      <RefreshCw size={20} className="text-slate-600" />
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                      <span className="text-[10px] font-black text-slate-400 uppercase block mb-1">{t('cockfight_element')}</span>
-                      <div className="flex items-center gap-2 font-bold text-slate-700">
-                        <span>{RINHA_CONFIG.ELEMENTS[rooster.element].icon}</span>
-                        <span>{t(RINHA_CONFIG.ELEMENTS[rooster.element].nameKey)}</span>
+                    <div className="flex gap-2 md:gap-4 shrink-0">
+                      <div className="flex flex-col items-center gap-1">
+                        <button onClick={() => setGameState('SHOP')} className="bg-slate-100 hover:bg-slate-200 p-2 rounded-xl transition-colors relative" title={t('cockfight_action_shop')}>
+                          <ShoppingBag size={20} className="text-slate-600" />
+                          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] font-black w-4 h-4 rounded-full flex items-center justify-center">{inventory.reduce((acc, i) => acc + i.count, 0)}</span>
+                        </button>
+                        <span className="text-[9px] font-black text-slate-500">{t('cockfight_action_shop')}</span>
+                      </div>
+                      <div className="flex flex-col items-center gap-1">
+                        <button onClick={() => setGameState('SELECTING_ROOSTER')} className="bg-slate-100 hover:bg-slate-200 p-2 rounded-xl transition-colors" title={t('cockfight_action_change_rooster')}>
+                          <RefreshCw size={20} className="text-slate-600" />
+                        </button>
+                        <span className="text-[9px] font-black text-slate-500">{t('cockfight_action_change_rooster')}</span>
                       </div>
                     </div>
-                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                      <span className="text-[10px] font-black text-slate-400 uppercase block mb-1">{t('cockfight_base_color')}</span>
-                      <div className="flex items-center gap-2 font-bold text-slate-700">
-                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: RINHA_CONFIG.COLORS[rooster.color].hex }}></div>
-                        <span>{t(RINHA_CONFIG.COLORS[rooster.color].nameKey)}</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 md:gap-4">
+                    <div className="bg-slate-50 p-2 md:p-3 rounded-xl border border-slate-100">
+                      <span className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase block mb-1">{t('cockfight_element')}</span>
+                      <div className="flex items-center gap-1 md:gap-2 font-bold text-slate-700 text-xs md:text-base">
+                        <span>{RINHA_CONFIG.ELEMENTS[rooster.element].icon}</span>
+                        <span className="truncate">{t(RINHA_CONFIG.ELEMENTS[rooster.element].nameKey)}</span>
+                      </div>
+                    </div>
+                    <div className="bg-slate-50 p-2 md:p-3 rounded-xl border border-slate-100">
+                      <span className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase block mb-1">{t('cockfight_base_color')}</span>
+                      <div className="flex items-center gap-1 md:gap-2 font-bold text-slate-700 text-xs md:text-base">
+                        <div className="w-2 h-2 md:w-3 md:h-3 rounded-full shrink-0" style={{ backgroundColor: RINHA_CONFIG.COLORS[rooster.color].hex }}></div>
+                        <span className="truncate">{t(RINHA_CONFIG.COLORS[rooster.color].nameKey)}</span>
                       </div>
                     </div>
                   </div>
                 </div>
 
                 {/* Seção de Aposta */}
-                <div className="bg-white rounded-3xl p-6 shadow-xl border-b-4 border-slate-200">
-                  <h3 className="font-black text-slate-800 mb-4 flex items-center gap-2 uppercase">
-                    <Coins className="text-yellow-500" /> {t('cockfight_bet_amount')}
-                  </h3>
-                  <div className="flex gap-2 mb-6">
+                <div className="bg-white rounded-3xl p-4 md:p-6 shadow-xl border-b-4 border-slate-200">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0 mb-4">
+                    <h3 className="font-black text-slate-800 flex items-center gap-2 uppercase text-sm md:text-base">
+                      <Coins className="text-yellow-500 shrink-0" /> {t('cockfight_bet_amount')}
+                    </h3>
+                    
+                    {/* Game Mode Selector */}
+                    <div className="flex bg-slate-100 rounded-xl p-1 w-full sm:w-auto">
+                      <button 
+                        onClick={() => setBattleMode('1v1')} 
+                        className={`flex-1 sm:flex-none px-4 py-2 sm:px-3 sm:py-1 text-xs font-black rounded-lg transition-colors ${battleMode === '1v1' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400'}`}
+                      >
+                        1 V 1
+                      </button>
+                      <button 
+                        onClick={() => setBattleMode('3v3')} 
+                        className={`flex-1 sm:flex-none px-4 py-2 sm:px-3 sm:py-1 text-xs font-black rounded-lg transition-colors ${battleMode === '3v3' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400'}`}
+                      >
+                        3 V 3
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap sm:flex-nowrap gap-2 mb-6">
                     {[10, 50, 100, 500].map(v => (
                       <button 
                         key={v}
                         onClick={() => setBet(v)}
-                        className={`flex-1 py-3 rounded-xl font-black text-sm transition-all ${bet === v ? 'bg-red-600 text-white shadow-lg' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
+                        className={`flex-1 min-w-[60px] py-3 rounded-xl font-black text-sm transition-all ${bet === v ? 'bg-red-600 text-white shadow-lg' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
                       >
                         {v}
                       </button>
@@ -318,6 +548,177 @@ const CockfightScreen = ({ onBack, balance, setBalance, showToast }) => {
                     {isProcessing ? <RefreshCw className="animate-spin" /> : <>{t('cockfight_find_opponent')} <ChevronRight /></>}
                   </button>
                 </div>
+
+                {activeBattle && activeBattle.matchData && (
+                  <div className="bg-yellow-50 rounded-3xl p-6 shadow-xl border-b-4 border-yellow-200">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <div className="text-[10px] font-black text-yellow-700 uppercase tracking-widest">
+                          {t('cockfight_battle_in_progress')}
+                        </div>
+                        <div className="font-black text-slate-800 text-lg mt-1">
+                          {t(activeBattle.matchData?.arena?.nameKey) || activeBattle.matchData?.arena?.name}
+                        </div>
+                        <div className="text-xs font-bold text-slate-600 mt-1">
+                          {activeBattle.battleMode?.toUpperCase()} · {activeBattle.bet} CHI
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-2 shrink-0">
+                        <button
+                          onClick={() => {
+                            setBet(activeBattle.bet || 10);
+                            setBattleMode(activeBattle.battleMode || '1v1');
+                            if (activeBattle.team3v3) setTeam3v3(activeBattle.team3v3);
+                            setMatchResult(activeBattle.matchData);
+                            setGameState('BATTLING');
+                          }}
+                          className="bg-slate-900 text-white px-4 py-2 rounded-xl font-black text-xs uppercase shadow-lg active:scale-95 transition-all"
+                        >
+                          {t('cockfight_resume_battle')}
+                        </button>
+                        <button
+                          onClick={() => {
+                            clearActiveBattle();
+                            showToast(t('cockfight_battle_discarded') || 'Batalha descartada', 'success');
+                          }}
+                          className="bg-white text-slate-900 px-4 py-2 rounded-xl font-black text-xs uppercase border border-yellow-200 hover:bg-yellow-100 transition-all active:scale-95"
+                        >
+                          {t('cockfight_discard_battle')}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {battleMode === '3v3' && (
+                  <div className="bg-white rounded-3xl p-4 md:p-6 shadow-xl border-b-4 border-slate-200">
+                    <div className="flex justify-between items-center mb-4 gap-2">
+                      <h3 className="font-black text-slate-800 flex items-center gap-2 uppercase text-sm md:text-base">
+                        <Swords className="text-red-600 shrink-0" /> SEU TIME 3V3
+                      </h3>
+                      <button onClick={() => setGameState('TEAM_3V3')} className="bg-slate-900 text-white px-3 py-2 md:px-4 rounded-xl font-black text-[10px] md:text-xs uppercase shadow-lg active:scale-95 transition-all shrink-0">
+                        EDITAR
+                      </button>
+                    </div>
+
+                    <div className="flex items-center justify-center gap-2 sm:gap-4 md:gap-6 bg-slate-950 rounded-2xl p-3 md:p-6 border border-slate-800 overflow-x-auto">
+                      {(team3v3 || []).map((r, idx) => (
+                        <div key={`team-${idx}`} className="flex flex-col items-center gap-1 md:gap-2 shrink-0">
+                          <RoosterSprite colorKey={r.color} element={r.element} size={70} />
+                          <div className="bg-slate-800 text-white text-[8px] md:text-[9px] font-black px-2 py-1 rounded-full uppercase text-center max-w-[80px] leading-tight">
+                            {t(RINHA_CONFIG.ELEMENTS[r.element]?.nameKey)}<br className="md:hidden" /> {t(RINHA_CONFIG.COLORS[r.color]?.nameKey)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {gameState === 'TEAM_3V3' && (
+              <div className="bg-white rounded-3xl p-6 shadow-xl space-y-6 animate-in slide-in-from-right-4 duration-300">
+                <div className="flex justify-between items-center">
+                  <h3 className="font-black text-slate-800 text-xl flex items-center gap-2">
+                    <Swords className="text-red-600" /> MONTAR TIME 3V3
+                  </h3>
+                  <button onClick={() => setGameState('MENU')} className="p-2 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors">
+                    <X size={20} className="text-slate-600" />
+                  </button>
+                </div>
+
+                <div className="grid gap-4">
+                  {(team3v3 || []).map((slot, idx) => (
+                    <div key={`slot-${idx}`} className="bg-slate-950 rounded-3xl p-5 border border-slate-800">
+                      <div className="flex flex-col md:flex-row gap-5 items-center">
+                        <div className="shrink-0">
+                          <RoosterSprite colorKey={slot.color} element={slot.element} size={140} />
+                        </div>
+
+                        <div className="flex-1 w-full space-y-4">
+                          <div>
+                            <div className="text-[10px] font-black text-white/50 uppercase mb-2">LINHAGEM</div>
+                            <div className="grid grid-cols-4 gap-2">
+                              {Object.values(RINHA_CONFIG.ELEMENTS).map(el => (
+                                <button
+                                  key={`slot-el-${idx}-${el.id}`}
+                                  onClick={() => updateTeamSlot(idx, { element: el.id })}
+                                  className={`py-3 rounded-xl border-2 font-black text-xs uppercase flex items-center justify-center gap-2 transition-all ${
+                                    slot.element === el.id ? 'border-yellow-400 bg-white/10 text-yellow-300' : 'border-slate-800 bg-slate-900 text-slate-300 hover:border-slate-700'
+                                  }`}
+                                >
+                                  <span className="text-base">{el.icon}</span>
+                                  <span className="hidden sm:inline">{t(el.nameKey)}</span>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div>
+                            <div className="text-[10px] font-black text-white/50 uppercase mb-2">PINTURA</div>
+                            <div className="flex items-center gap-3">
+                              {Object.values(RINHA_CONFIG.COLORS).map(c => (
+                                <button
+                                  key={`slot-col-${idx}-${c.id}`}
+                                  onClick={() => updateTeamSlot(idx, { color: c.id })}
+                                  className={`w-12 h-12 rounded-full border-4 transition-all ${slot.color === c.id ? 'border-white shadow-[0_0_0_4px_rgba(250,204,21,0.35)]' : 'border-slate-800 opacity-80 hover:opacity-100'}`}
+                                  style={{ backgroundColor: c.hex }}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => {
+                    setGameState('MENU');
+                    showToast('TIME 3V3 SALVO!', 'success');
+                  }}
+                  className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black shadow-lg uppercase"
+                >
+                  SALVAR TIME 3V3
+                </button>
+              </div>
+            )}
+
+            {gameState === 'SHOP' && (
+              <div className="bg-white rounded-3xl p-6 shadow-xl space-y-6 animate-in slide-in-from-right-4 duration-300">
+                <div className="flex justify-between items-center">
+                  <h3 className="font-black text-slate-800 text-xl flex items-center gap-2">
+                    <ShoppingBag className="text-yellow-500" /> BATTLE ITEMS
+                  </h3>
+                  <button onClick={() => setGameState('MENU')} className="p-2 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors">
+                    <X size={20} className="text-slate-600" />
+                  </button>
+                </div>
+                
+                <div className="grid gap-4">
+                  {inventory.map(item => (
+                    <div key={item.id} className="bg-slate-50 p-4 rounded-2xl border-2 border-slate-100 flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="text-3xl">{item.icon}</div>
+                        <div>
+                          <div className="font-black text-slate-800 uppercase">{item.name}</div>
+                          <div className="text-[10px] font-bold text-slate-400">IN INVENTORY: <span className="text-slate-800">{item.count}</span></div>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={() => buyItem(item.id)}
+                        className="bg-yellow-400 hover:bg-yellow-500 text-yellow-900 px-4 py-2 rounded-xl font-black flex items-center gap-1 shadow-sm transition-all active:scale-95"
+                      >
+                        <ChiIcon className="w-4 h-4" /> {item.price}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                
+                <button onClick={() => setGameState('MENU')} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black shadow-lg uppercase mt-4">
+                  BACK TO LOBBY
+                </button>
               </div>
             )}
 
@@ -325,7 +726,7 @@ const CockfightScreen = ({ onBack, balance, setBalance, showToast }) => {
               <div className="bg-white rounded-3xl p-6 shadow-xl space-y-6 animate-in slide-in-from-right-4 duration-300">
                 <div className="flex flex-col items-center gap-4 py-4 bg-slate-50 rounded-2xl border border-slate-100 shadow-inner">
                   <RoosterSprite 
-                    color={RINHA_CONFIG.COLORS[selectedColor].hex} 
+                    colorKey={selectedColor} 
                     element={selectedElement} 
                     size={120} 
                   />
@@ -344,10 +745,10 @@ const CockfightScreen = ({ onBack, balance, setBalance, showToast }) => {
                         onClick={() => setSelectedElement(el.id)}
                         className={`p-3 rounded-xl border-2 transition-all flex items-center gap-2 font-bold ${selectedElement === el.id ? 'border-red-500 bg-red-50 text-red-700 shadow-lg shadow-red-100' : 'border-slate-100 bg-slate-50 text-slate-500 hover:border-slate-200'}`}
                       >
-                        <span className="text-xl">{el.icon}</span>
-                        <div className="text-left">
-                          <div className="text-xs leading-none uppercase tracking-tighter">{t(el.nameKey)}</div>
-                          <div className="text-[10px] opacity-60 font-black">PWR: {el.base}</div>
+                        <span className="text-xl shrink-0">{el.icon}</span>
+                        <div className="text-left overflow-hidden">
+                          <div className="text-xs md:text-sm leading-none uppercase tracking-tighter truncate">{t(el.nameKey)}</div>
+                          <div className="text-[10px] opacity-60 font-black mt-1">PWR: {el.base}</div>
                         </div>
                       </button>
                     ))}
@@ -391,11 +792,11 @@ const CockfightScreen = ({ onBack, balance, setBalance, showToast }) => {
                         onClick={() => setSelectedColor(c.id)}
                         className={`p-3 rounded-xl border-2 transition-all flex items-center gap-2 font-bold ${selectedColor === c.id ? 'border-slate-800 bg-slate-900 text-white' : 'border-slate-100 bg-slate-50 text-slate-500 hover:border-slate-200'}`}
                       >
-                        <div className="w-4 h-4 rounded-full" style={{ backgroundColor: c.hex }}></div>
-                        <div className="text-left">
-                          <div className="text-xs leading-none">{t(c.nameKey)}</div>
-                          <div className="text-[9px] opacity-60 flex items-center gap-1">
-                            <TrendingUp size={10} /> {t('cockfight_vence')} {t(RINHA_CONFIG.COLORS[c.beats].nameKey)}
+                        <div className="w-4 h-4 rounded-full shrink-0" style={{ backgroundColor: c.hex }}></div>
+                        <div className="text-left overflow-hidden">
+                          <div className="text-xs md:text-sm leading-none truncate">{t(c.nameKey)}</div>
+                          <div className="text-[9px] opacity-60 flex items-center gap-1 mt-1 truncate">
+                            <TrendingUp size={10} className="shrink-0" /> <span className="truncate">{t('cockfight_vence')} {t(RINHA_CONFIG.COLORS[c.beats].nameKey)}</span>
                           </div>
                         </div>
                       </button>
@@ -416,11 +817,32 @@ const CockfightScreen = ({ onBack, balance, setBalance, showToast }) => {
               </div>
             )}
 
-            {gameState === 'BATTLING' && (
+            {gameState === 'BATTLING' && matchResult && (
               <div className="animate-in zoom-in duration-500">
-                <BattleVisualizer 
+                <InteractiveBattle 
                   matchData={matchResult} 
-                  playerRooster={rooster} 
+                  initialState={activeBattle?.battleState}
+                  onStateChange={(s) => { battleStateRef.current = s; }}
+                  onExit={(s) => {
+                    battleStateRef.current = s;
+                    persistActiveBattle(s);
+                    setGameState('MENU');
+                  }}
+                  playerTeam={
+                    battleMode === '3v3'
+                      ? (team3v3 || []).map((r, i) => ({ ...r, id: `p${i + 1}`, level: rooster.level || 1 }))
+                      : [{ ...rooster, id: 'p1' }]
+                  } 
+                  cpuTeam={
+                    battleMode === '3v3' ? [
+                      {...matchResult.cpu, id: 'c1'},
+                      {element: Object.keys(RINHA_CONFIG.ELEMENTS)[Math.floor(Math.random()*4)], color: Object.keys(RINHA_CONFIG.COLORS)[Math.floor(Math.random()*4)], level: rooster.level, id: 'c2'},
+                      {element: Object.keys(RINHA_CONFIG.ELEMENTS)[Math.floor(Math.random()*4)], color: Object.keys(RINHA_CONFIG.COLORS)[Math.floor(Math.random()*4)], level: rooster.level, id: 'c3'}
+                    ] : [{...matchResult.cpu, id: 'c1'}]
+                  }
+                  mode={battleMode}
+                  inventory={inventory}
+                  onUseItem={handleUseItem}
                   onComplete={onBattleComplete} 
                 />
               </div>

@@ -1,0 +1,209 @@
+@keyframes rinha-lunge-p {
+  0% { transform: translateX(0) scale(1); }
+  40% { transform: translateX(65%) scale(1.08); }
+  60% { transform: translateX(65%) scale(1.08); }
+  100% { transform: translateX(0) scale(1); }
+}
+
+@keyframes rinha-lunge-c {
+  0% { transform: translateX(0) scale(1); }
+  40% { transform: translateX(-65%) scale(1.08); }
+  60% { transform: translateX(-65%) scale(1.08); }
+  100% { transform: translateX(0) scale(1); }
+}
+
+@keyframes rinha-wing-flap {
+  0% { transform: rotate(0); }
+  50% { transform: rotate(-20deg) scale(1.2); }
+  100% { transform: rotate(0); }
+}
+
+@keyframes rinha-damage-shake {
+  0%, 100% { filter: brightness(1); transform: translate(0, 0); }
+  20% { filter: sepia(1) hue-rotate(-50deg) saturate(5); transform: translate(-8px, 8px); }
+  40% { filter: sepia(1) hue-rotate(-50deg) saturate(5); transform: translate(8px, -8px); }
+}
+
+@keyframes rinha-victory-jump {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-20px) scale(1.1); filter: drop-shadow(0 0 10px rgba(250, 204, 21, 0.75)); }
+}
+
+@keyframes rinha-knockout-l {
+  0% { transform: rotate(0) translateY(0); filter: grayscale(0); opacity: 1; }
+  20% { transform: rotate(-20deg) translateY(-20px) translateX(-20px); filter: grayscale(0.5); }
+  40% { transform: rotate(-45deg) translateY(0px) translateX(-30px); }
+  100% { transform: rotate(-90deg) translateY(40px) translateX(-40px); filter: grayscale(1) brightness(0.65) contrast(1.2); opacity: 0.82; }
+}
+
+@keyframes rinha-knockout-r {
+  0% { transform: rotate(0) translateY(0); filter: grayscale(0); opacity: 1; }
+  20% { transform: rotate(20deg) translateY(-20px) translateX(20px); filter: grayscale(0.5); }
+  40% { transform: rotate(45deg) translateY(0px) translateX(30px); }
+  100% { transform: rotate(90deg) translateY(40px) translateX(40px); filter: grayscale(1) brightness(0.65) contrast(1.2); opacity: 0.82; }
+}
+
+@keyframes rinha-magic-cast-pulse {
+  0% { transform: scale(1); filter: brightness(1.8); opacity: 1; }
+  40% { transform: scale(1.12); opacity: 1; }
+  100% { transform: scale(1); filter: brightness(1); opacity: 0.92; }
+}
+
+.anim-lunge-up { animation: rinha-lunge-p 0.6s cubic-bezier(0.22, 1, 0.36, 1); z-index: 100 !important; }
+.anim-lunge-down { animation: rinha-lunge-c 0.6s cubic-bezier(0.22, 1, 0.36, 1); z-index: 100 !important; }
+.anim-wing-flap .rooster-wing { animation: rinha-wing-flap 0.3s ease-in-out infinite; transform-origin: center center; }
+.anim-hit { animation: rinha-damage-shake 0.3s; }
+.anim-winner-l { animation: rinha-victory-jump 0.8s infinite; transform-origin: bottom center; }
+.anim-winner-r { animation: rinha-victory-jump 0.8s infinite; transform-origin: bottom center; }
+.anim-ko-l { animation: rinha-knockout-l 0.6s forwards ease-in; transform-origin: bottom center; }
+.anim-ko-r { animation: rinha-knockout-r 0.6s forwards ease-in; transform-origin: bottom center; }
+
+.arena-magic-fire { box-shadow: 0 0 25px rgba(248, 113, 113, 0.9); filter: hue-rotate(-10deg) saturate(1.8) brightness(1.2); }
+.arena-magic-water { box-shadow: 0 0 25px rgba(56, 189, 248, 0.9); filter: hue-rotate(160deg) saturate(2) brightness(1.3); }
+.arena-magic-earth { box-shadow: 0 0 25px rgba(163, 230, 53, 0.9); filter: sepia(0.6) saturate(1.8) brightness(1.1); }
+.arena-magic-air { box-shadow: 0 0 25px rgba(129, 140, 248, 0.9); filter: hue-rotate(220deg) saturate(2.2) brightness(1.4); }
+.arena-magic-cast { animation: rinha-magic-cast-pulse 0.7s ease-out; }
+
+.active-rooster {
+  filter: drop-shadow(0 0 18px rgba(59, 130, 246, 0.75)) !important;
+  transform: scale(1.08) !important;
+  z-index: 50 !important;
+  transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.inactive-rooster {
+  filter: blur(1.5px) grayscale(0.35) brightness(0.75) !important;
+  opacity: 0.55 !important;
+  transform: scale(0.92) !important;
+  transition: all 0.45s ease;
+}
+
+.target-rooster {
+  filter: drop-shadow(0 0 16px rgba(239, 68, 68, 0.85)) !important;
+  animation: rinha-target-pulse 1.5s infinite ease-in-out;
+}
+
+@keyframes rinha-target-pulse {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(239, 68, 68, 0.6)); }
+  50% { transform: scale(1.04); filter: drop-shadow(0 0 24px rgba(239, 68, 68, 1)); }
+}
+
+.rinha-rooster-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rinha-rooster-wrap::before {
+  content: '';
+  position: absolute;
+  inset: -18px;
+  border-radius: 999px;
+  opacity: 0.7;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.rinha-rooster-wrap::after {
+  content: '';
+  position: absolute;
+  inset: -28px;
+  border-radius: 999px;
+  opacity: 0.35;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.rinha-rooster-content {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes rinha-fire-flicker {
+  0%, 100% { transform: scale(1); filter: blur(0.5px) brightness(1.1); opacity: 0.7; }
+  50% { transform: scale(1.05); filter: blur(1.2px) brightness(1.3); opacity: 0.9; }
+}
+
+@keyframes rinha-water-ripple {
+  0% { transform: scale(0.96); opacity: 0.55; }
+  50% { transform: scale(1.06); opacity: 0.85; }
+  100% { transform: scale(0.96); opacity: 0.55; }
+}
+
+@keyframes rinha-earth-dust {
+  0% { transform: translateY(0) scale(1); opacity: 0.25; }
+  50% { transform: translateY(6px) scale(1.05); opacity: 0.4; }
+  100% { transform: translateY(0) scale(1); opacity: 0.25; }
+}
+
+@keyframes rinha-air-swirl {
+  0% { transform: rotate(0deg) scale(1); opacity: 0.22; }
+  50% { transform: rotate(180deg) scale(1.08); opacity: 0.35; }
+  100% { transform: rotate(360deg) scale(1); opacity: 0.22; }
+}
+
+.rinha-fx-fire::before {
+  background: radial-gradient(circle, rgba(239, 68, 68, 0.35) 0%, rgba(245, 158, 11, 0.25) 35%, rgba(0, 0, 0, 0) 70%);
+  animation: rinha-fire-flicker 1.4s infinite ease-in-out;
+}
+.rinha-fx-fire::after {
+  background: conic-gradient(from 0deg, rgba(239, 68, 68, 0.0), rgba(245, 158, 11, 0.35), rgba(239, 68, 68, 0.0));
+  animation: rinha-fire-flicker 2.1s infinite ease-in-out;
+}
+
+.rinha-fx-water::before {
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.32) 0%, rgba(56, 189, 248, 0.2) 40%, rgba(0, 0, 0, 0) 72%);
+  animation: rinha-water-ripple 1.8s infinite ease-in-out;
+}
+.rinha-fx-water::after {
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.22) 0%, rgba(56, 189, 248, 0.06) 55%, rgba(0, 0, 0, 0) 78%);
+  animation: rinha-water-ripple 2.6s infinite ease-in-out;
+}
+
+.rinha-fx-earth::before {
+  background: radial-gradient(circle, rgba(34, 197, 94, 0.28) 0%, rgba(163, 230, 53, 0.18) 45%, rgba(0, 0, 0, 0) 74%);
+  animation: rinha-earth-dust 2.2s infinite ease-in-out;
+}
+.rinha-fx-earth::after {
+  background: radial-gradient(circle, rgba(0, 0, 0, 0) 40%, rgba(34, 197, 94, 0.18) 62%, rgba(0, 0, 0, 0) 78%);
+  animation: rinha-earth-dust 3.0s infinite ease-in-out;
+}
+
+.rinha-fx-air::before {
+  background: radial-gradient(circle, rgba(148, 163, 184, 0.25) 0%, rgba(241, 245, 249, 0.16) 45%, rgba(0, 0, 0, 0) 75%);
+  animation: rinha-air-swirl 2.4s infinite linear;
+}
+.rinha-fx-air::after {
+  background: conic-gradient(from 90deg, rgba(255, 255, 255, 0.0), rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.0));
+  animation: rinha-air-swirl 3.4s infinite linear;
+}
+
+.rinha-arena-fire {
+  background: radial-gradient(1100px 600px at 25% 35%, rgba(239, 68, 68, 0.20), rgba(0, 0, 0, 0) 65%),
+              radial-gradient(900px 500px at 75% 55%, rgba(245, 158, 11, 0.16), rgba(0, 0, 0, 0) 70%),
+              linear-gradient(180deg, rgba(2, 6, 23, 1) 0%, rgba(15, 23, 42, 1) 100%);
+}
+
+.rinha-arena-water {
+  background: radial-gradient(1100px 600px at 25% 35%, rgba(56, 189, 248, 0.18), rgba(0, 0, 0, 0) 65%),
+              radial-gradient(900px 500px at 75% 55%, rgba(59, 130, 246, 0.14), rgba(0, 0, 0, 0) 70%),
+              linear-gradient(180deg, rgba(2, 6, 23, 1) 0%, rgba(15, 23, 42, 1) 100%);
+}
+
+.rinha-arena-earth {
+  background: radial-gradient(1100px 600px at 25% 35%, rgba(34, 197, 94, 0.18), rgba(0, 0, 0, 0) 65%),
+              radial-gradient(900px 500px at 75% 55%, rgba(163, 230, 53, 0.12), rgba(0, 0, 0, 0) 70%),
+              linear-gradient(180deg, rgba(2, 6, 23, 1) 0%, rgba(15, 23, 42, 1) 100%);
+}
+
+.rinha-arena-air {
+  background: radial-gradient(1100px 600px at 25% 35%, rgba(241, 245, 249, 0.14), rgba(0, 0, 0, 0) 65%),
+              radial-gradient(900px 500px at 75% 55%, rgba(129, 140, 248, 0.12), rgba(0, 0, 0, 0) 70%),
+              linear-gradient(180deg, rgba(2, 6, 23, 1) 0%, rgba(15, 23, 42, 1) 100%);
+}
+
+.rinha-arena-badge-fire { background: rgba(239, 68, 68, 0.16); border-color: rgba(239, 68, 68, 0.55); color: rgba(252, 211, 77, 1); }
+.rinha-arena-badge-water { background: rgba(56, 189, 248, 0.14); border-color: rgba(56, 189, 248, 0.55); color: rgba(191, 219, 254, 1); }
+.rinha-arena-badge-earth { background: rgba(34, 197, 94, 0.14); border-color: rgba(34, 197, 94, 0.55); color: rgba(187, 247, 208, 1); }
+.rinha-arena-badge-air { background: rgba(241, 245, 249, 0.12); border-color: rgba(241, 245, 249, 0.35); color: rgba(226, 232, 240, 1); }

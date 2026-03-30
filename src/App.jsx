@@ -855,7 +855,7 @@ export default function App() {
         last_collected_day: 0 
       }]);
       showToast(t('app_bought_animal', [t(product.nameKey)]), 'success');
-      addFloatingText(e.clientX, e.clientY, `-${product.priceCoins} 💰`, '#ef4444');
+      addFloatingText(e.clientX, e.clientY, `-${product.priceCoins} CHI`, '#ef4444');
     }
   };
   
@@ -866,7 +866,7 @@ export default function App() {
         setBalance(prev => prev - tech.price);
         setAutomations(prev => ({ ...prev, [itemId]: { active: true, daysLeft: tech.duration } }));
         showToast(t('app_rented_tech', [t(tech.nameKey), tech.duration]), 'success');
-        addFloatingText(e.clientX, e.clientY, `-${tech.price} 💰`, '#ef4444');
+        addFloatingText(e.clientX, e.clientY, `-${tech.price} CHI`, '#ef4444');
       }
       return;
     }
@@ -876,7 +876,7 @@ export default function App() {
         setBalance(prev => prev - upg.price);
         setUpgrades(prev => ({ ...prev, [itemId]: true }));
         showToast(t('app_built_upgrade', [t(upg.nameKey)]), 'success');
-        addFloatingText(e.clientX, e.clientY, `-${upg.price} 💰`, '#ef4444');
+        addFloatingText(e.clientX, e.clientY, `-${upg.price} CHI`, '#ef4444');
       }
       return;
     }
@@ -897,7 +897,7 @@ export default function App() {
         showToast(t('app_barn_expanded', [config.quantity]), "success"); 
       }
       if (itemId !== 'EXPANSION') showToast(t('app_bought_item', [t(config.nameKey)]), 'success');
-      addFloatingText(e.clientX, e.clientY, `-${config.price} 💰`, '#ef4444');
+      addFloatingText(e.clientX, e.clientY, `-${config.price} CHI`, '#ef4444');
       updateQuestProgress('BUY_ITEM');
     }
   };
@@ -912,7 +912,7 @@ export default function App() {
           setBalance(prev => prev - skin.price);
           setCurrentSkin(skin.id);
           showToast(t('app_theme_applied', [t(skin.nameKey)]), 'success');
-          addFloatingText(e.clientX, e.clientY, `-${skin.price} 💰`, '#ef4444');
+          addFloatingText(e.clientX, e.clientY, `-${skin.price} CHI`, '#ef4444');
        } else {
          showToast(t('msg_insufficient_funds'), "error");
        }
@@ -963,7 +963,7 @@ export default function App() {
     setBalance(prev => prev + commission);
     setStats(prev => ({ ...prev, total_earned: prev.total_earned + commission }));
     playSound('success');
-    addFloatingText(e.clientX, e.clientY, `+${commission} 💰`, '#22c55e');
+    addFloatingText(e.clientX, e.clientY, `+${commission} CHI`, '#22c55e');
     showToast(t('app_referral_commission', [levelConfig.label]), 'success');
     setReferralHistory(prev => [{ id: uuidv4(), desc: t('app_referral_history_desc', [levelConfig.level, 'Gigante']), amount: commission }, ...prev]);
   };

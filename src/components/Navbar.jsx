@@ -73,7 +73,7 @@ const Navbar = ({ balance, dayCount, onViewChange, currentView, level, xp, xpToN
         </div>
 
         <div onClick={() => { playSound('pop'); onViewChange('WALLET'); }} className="md:hidden flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-md border bg-white text-slate-700 border-slate-200 cursor-pointer hover:scale-105 transition-transform">
-          <ChiIcon className="w-4 h-4" /> {balance}
+          <ChiIcon className="w-5 h-5" /> {balance}
         </div>
       </div>
 
@@ -148,7 +148,7 @@ const Navbar = ({ balance, dayCount, onViewChange, currentView, level, xp, xpToN
         </div>
         
         <div className="h-8 w-[2px] bg-slate-300 mx-1 hidden md:block"></div>
-        <div onClick={() => { playSound('pop'); onViewChange('WALLET'); }} className="hidden md:flex flex-col items-end gap-0.5 cursor-pointer hover:scale-105 transition-transform"><div className="flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-md border min-w-[80px] justify-end bg-white text-slate-700 border-slate-200"><ChiIcon className="w-4 h-4" /> {balance}</div></div>
+        <div onClick={() => { playSound('pop'); onViewChange('WALLET'); }} className="hidden md:flex flex-col items-end gap-0.5 cursor-pointer hover:scale-105 transition-transform"><div className="flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-md border min-w-[80px] justify-end bg-white text-slate-700 border-slate-200"><ChiIcon className="w-5 h-5" /> {balance}</div></div>
       </div>
     </header>
   );

@@ -3,6 +3,7 @@ import { Coins, Bot, Users2, Timer, Zap, Shield, ChevronRight, CheckCircle2 } fr
 import { playSound } from '../../../utils/audioSystem';
 import { MINIGAME_CONFIG } from '../../../data/gameConfig';
 import { useLanguage } from '../../../contexts/LanguageContext';
+import ChiIcon from '../../ui/ChiIcon';
 
 const HarvestSetup = ({ onBack, onConfirm, balance, chickens = [] }) => {
   const { t } = useLanguage();
@@ -237,18 +238,18 @@ const HarvestSetup = ({ onBack, onConfirm, balance, chickens = [] }) => {
             <div className="space-y-3">
               <div className="flex justify-between text-sm">
                 <span className="text-slate-400 font-bold">{t('harvest_your_bet')}</span>
-                <span className="font-black">{bet} 💰</span>
+                <span className="font-black inline-flex items-center gap-1">{mode === 'BOT' ? 0 : bet} <ChiIcon className="w-4 h-4" /></span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-slate-400 font-bold">{t('harvest_opp_bet')}</span>
-                <span className="font-black">{bet} 💰</span>
+                <span className="font-black inline-flex items-center gap-1">{mode === 'BOT' ? 0 : bet} <ChiIcon className="w-4 h-4" /></span>
               </div>
               <div className="h-px bg-slate-700 my-2" />
               <div className="flex justify-between items-end">
                 <div>
                   <span className="text-slate-400 font-bold text-xs">{t('harvest_winner_prize', [mode === 'BOT' ? 200 : 180])}</span>
                   <div className="text-3xl font-black text-green-400">
-                    {mode === 'BOT' ? bet * 2 : Math.floor(bet * 1.8)} <span className="text-xs">💰</span>
+                    <span className="inline-flex items-center gap-1">{mode === 'BOT' ? 0 : Math.floor(bet * 1.8)} <ChiIcon className="w-4 h-4" /></span>
                   </div>
                 </div>
                 <div className="text-right">

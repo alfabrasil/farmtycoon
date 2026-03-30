@@ -53,12 +53,13 @@ const HarvestGameScreen = ({ onBack, balance, setBalance, showToast, chickens })
   }, [history]);
 
   const handleStartGame = (config) => {
-    if (balance < config.bet) {
-      showToast(t('msg_insufficient_funds'), 'error');
-      return;
+    if (!config?.opponent?.isBot) {
+      if (balance < config.bet) {
+        showToast(t('msg_insufficient_funds'), 'error');
+        return;
+      }
+      setBalance(prev => prev - config.bet);
     }
-
-    setBalance(prev => prev - config.bet);
     setGameConfig(config);
     setGameState('PLAYING');
     playSound('game_start');
@@ -73,7 +74,7 @@ const HarvestGameScreen = ({ onBack, balance, setBalance, showToast, chickens })
     let prize = 0;
     if (result.winner === 'PLAYER') {
       if (gameConfig.opponent?.isBot) {
-        prize = gameConfig.bet * 2; // Contra Bot: Dobra o valor (simulação de teste)
+        prize = 0;
       } else {
         // PvP Real/Mock: 180% do valor apostado (90% do pote total)
         prize = Math.floor(gameConfig.bet * 1.8);
@@ -88,12 +89,16 @@ const HarvestGameScreen = ({ onBack, balance, setBalance, showToast, chickens })
         showToast(t('harvest_ranking_points', [pointsGained]), 'info');
       }
       setBalance(prev => prev + prize);
-      playSound('success');
+      playSound('victory');
     } else if (result.winner === 'DRAW') {
-      prize = gameConfig.bet; // Devolve aposta
-      setBalance(prev => prev + prize);
+      if (gameConfig.opponent?.isBot) {
+        prize = 0;
+      } else {
+        prize = gameConfig.bet;
+        setBalance(prev => prev + prize);
+      }
     } else {
-      playSound('error');
+      playSound('defeat');
     }
 
     // Salvar no Histórico
@@ -101,11 +106,11 @@ const HarvestGameScreen = ({ onBack, balance, setBalance, showToast, chickens })
       id: uuidv4(),
       date: new Date().toISOString(),
       opponent: gameConfig.opponent.name,
-      bet: gameConfig.bet,
+      bet: gameConfig.opponent?.isBot ? 0 : gameConfig.bet,
       score: result.playerScore,
       oppScore: result.oppScore,
       result: result.winner === 'PLAYER' ? 'VITORIA' : result.winner === 'DRAW' ? 'EMPATE' : 'DERROTA',
-      profit: result.winner === 'PLAYER' ? prize - gameConfig.bet : result.winner === 'DRAW' ? 0 : -gameConfig.bet,
+      profit: gameConfig.opponent?.isBot ? 0 : (result.winner === 'PLAYER' ? prize - gameConfig.bet : result.winner === 'DRAW' ? 0 : -gameConfig.bet),
       isPvP: !gameConfig.opponent.isBot
     };
 

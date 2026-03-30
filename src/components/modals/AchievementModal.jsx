@@ -2,6 +2,7 @@ import React from 'react';
 import Confetti from '../ui/Confetti';
 import { Gift, Lock, CheckCircle } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
+import ChiIcon from '../ui/ChiIcon';
 
 const AchievementModal = ({ achievement, onClose }) => {
   const { t } = useLanguage();
@@ -15,7 +16,7 @@ const AchievementModal = ({ achievement, onClose }) => {
       <h2 className="text-xs font-bold uppercase tracking-widest text-yellow-600 mb-1">{t('achievement_unlocked')}</h2>
       <h3 className="text-3xl font-black text-slate-800 mb-2">{t(achievement.titleKey)}</h3>
       <p className="text-slate-500 font-medium mb-6">{t(achievement.descKey)}</p>
-      <div className="bg-yellow-100 text-yellow-800 px-4 py-2 rounded-xl font-black inline-flex items-center gap-2 mb-6"><Gift size={20}/> {t('achievement_reward_label')}{achievement.reward} 💰</div>
+      <div className="bg-yellow-100 text-yellow-800 px-4 py-2 rounded-xl font-black inline-flex items-center gap-2 mb-6"><Gift size={20}/> {t('achievement_reward_label')}{achievement.reward} <ChiIcon className="w-5 h-5" /></div>
       <button onClick={onClose} className="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-black shadow-lg border-b-4 border-green-700 active:border-b-0 active:translate-y-1 transition-all">{t('btn_collect_continue')}</button>
     </div>
   </div>

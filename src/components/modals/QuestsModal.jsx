@@ -1,6 +1,7 @@
 import React from 'react';
 import { X, ClipboardList, CheckCircle } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
+import ChiIcon from '../ui/ChiIcon';
 
 const QuestsModal = ({ quests, onClose, onClaim }) => {
   const { t } = useLanguage();
@@ -16,7 +17,7 @@ const QuestsModal = ({ quests, onClose, onClaim }) => {
             <div key={q.id} className="bg-slate-50 p-3 rounded-2xl border border-slate-200">
               <div className="flex justify-between items-start mb-2">
                 <span className="font-bold text-slate-700 text-sm">{t(`quest_${q.id}_desc`)}</span>
-                <span className="font-black text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded-lg border border-yellow-200">+{q.reward} 💰</span>
+                <span className="font-black text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded-lg border border-yellow-200 inline-flex items-center gap-1">+{q.reward} <ChiIcon className="w-5 h-5" /></span>
               </div>
               <div className="flex items-center gap-3">
                 <div className="flex-1 h-3 bg-slate-200 rounded-full overflow-hidden border border-slate-300">

@@ -29,7 +29,14 @@ const WheelScreen = ({ onBack, onSpin, canSpin, balance }) => {
     setRotation(newRotation);
     setTimeout(() => {
       setSpinning(false);
-      const prize = WHEEL_PRIZES[Math.floor(Math.random() * WHEEL_PRIZES.length)];
+      // Weighted selection
+      const totalWeight = WHEEL_PRIZES.reduce((acc, p) => acc + (p.weight || 1), 0);
+      let roll = Math.random() * totalWeight;
+      let prize = WHEEL_PRIZES[0];
+      for (let i = 0; i < WHEEL_PRIZES.length; i++) {
+        roll -= (WHEEL_PRIZES[i].weight || 1);
+        if (roll <= 0) { prize = WHEEL_PRIZES[i]; break; }
+      }
       onSpin(prize);
       
       // Tutorial Check

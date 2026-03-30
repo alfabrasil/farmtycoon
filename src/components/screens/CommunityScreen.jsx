@@ -29,11 +29,11 @@ const CommunityScreen = ({ onBack, onSimulateReferral, referralHistory, coopProg
             <h3 className="font-black text-slate-800 mb-4 flex items-center gap-2"><Zap className="text-yellow-500" size={20}/> {t('comm_earnings_sim')}</h3>
             <div className="grid grid-cols-1 gap-2">
               {REFERRAL_LEVELS.map((lvl, index) => (
-                <button key={`ref-${lvl.level}-${index}`} onClick={(e) => onSimulateReferral(lvl, e)} className="flex items-center justify-between p-3 bg-slate-50 hover:bg-green-50 active:scale-95 transition-all rounded-xl border border-slate-200 hover:border-green-300 group"><div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-slate-200 group-hover:bg-green-500 group-hover:text-white flex items-center justify-center font-bold text-xs transition-colors">{lvl.level}º</div><span className="font-bold text-slate-600 group-hover:text-green-700">{t(lvl.labelKey)}</span></div><div className="text-right"><span className="text-xs text-slate-400 block">{t('comm_commission')} {(lvl.percent * 100)}%</span><span className="font-black text-green-600 text-lg inline-flex items-center gap-1">+{Math.floor(1000 * lvl.percent)} <ChiIcon className="w-4 h-4" /></span></div></button>
+                <button key={`ref-${lvl.level}-${index}`} onClick={(e) => onSimulateReferral(lvl, e)} className="flex items-center justify-between p-3 bg-slate-50 hover:bg-green-50 active:scale-95 transition-all rounded-xl border border-slate-200 hover:border-green-300 group"><div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-slate-200 group-hover:bg-green-500 group-hover:text-white flex items-center justify-center font-bold text-xs transition-colors">{lvl.level}º</div><span className="font-bold text-slate-600 group-hover:text-green-700">{t(lvl.labelKey)}</span></div><div className="text-right"><span className="text-xs text-slate-400 block">{t('comm_commission')} {(lvl.percent * 100)}%</span><span className="font-black text-green-600 text-lg inline-flex items-center gap-1">+{Math.floor(1000 * lvl.percent)} <ChiIcon className="w-5 h-5" /></span></div></button>
               ))}
             </div>
           </div>
-          {referralHistory.length > 0 && (<div className="bg-white/80 p-4 rounded-3xl border-b-4 border-slate-200"><h4 className="font-bold text-slate-700 mb-2">{t('comm_recent_history')}</h4><div className="space-y-2 max-h-40 overflow-y-auto">{referralHistory.map((item, idx) => (<div key={`refhist-${item.id || idx}`} className="text-xs flex justify-between text-slate-500 border-b border-slate-100 pb-1"><span>{item.desc}</span><span className="font-bold text-green-600 inline-flex items-center gap-1">+{item.amount} <ChiIcon className="w-3.5 h-3.5" /></span></div>))}</div></div>)}
+          {referralHistory.length > 0 && (<div className="bg-white/80 p-4 rounded-3xl border-b-4 border-slate-200"><h4 className="font-bold text-slate-700 mb-2">{t('comm_recent_history')}</h4><div className="space-y-2 max-h-40 overflow-y-auto">{referralHistory.map((item, idx) => (<div key={`refhist-${item.id || idx}`} className="text-xs flex justify-between text-slate-500 border-b border-slate-100 pb-1"><span>{item.desc}</span><span className="font-bold text-green-600 inline-flex items-center gap-1">+{item.amount} <ChiIcon className="w-4.5 h-4.5" /></span></div>))}</div></div>)}
         </div>
       ) : tab === 'COOP' ? (
         <div className="space-y-6">
@@ -82,7 +82,7 @@ const CommunityScreen = ({ onBack, onSimulateReferral, referralHistory, coopProg
                       <div className="text-xs text-slate-500">{t('comm_seller')}: {listing.seller}</div>
                     </div>
                     <button disabled={balance < listing.price || chickens.length >= maxCapacity} onClick={() => onBuyAuction(listing)} className="bg-green-500 disabled:bg-slate-300 text-white px-3 py-2 rounded-xl font-black text-xs border-b-4 border-green-700 disabled:border-slate-400 active:border-b-0 active:translate-y-1 transition-all">
-                      <span className="inline-flex items-center gap-1">{listing.price} <ChiIcon className="w-4 h-4" /></span>
+                      <span className="inline-flex items-center gap-1">{listing.price} <ChiIcon className="w-5 h-5" /></span>
                     </button>
                   </div>
                   );

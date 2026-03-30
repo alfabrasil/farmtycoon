@@ -2,6 +2,10 @@
 // Solução robusta para iOS que mantém WebAudio como primário, mas usa um Pool de HTMLAudioElements
 // como fallback garantido para dispositivos Apple que bloqueiam AudioContext ou requerem User Gesture estrito.
 
+import punchUrl from '../public/sounds/punch.mp3';
+import victoryUrl from '../public/sounds/victory.MP3';
+import defeatUrl from '../public/sounds/defeat.MP3';
+
 let IS_MUTED_GLOBAL = false;
 let USE_FALLBACK_AUDIO = false; // Ativado automaticamente no iOS
 const AUDIO_CACHE = {}; // Cache de URLs (Blob) para os sons gerados
@@ -9,6 +13,12 @@ const AUDIO_POOL_SIZE = 8; // Número de canais de áudio simultâneos para o fa
 const audioPool = []; // Pool de elementos <audio>
 let poolIndex = 0; // Índice rotativo do pool
 let isPoolUnlocked = false; // Flag para saber se o pool já foi "abençoado" pelo user gesture
+
+const FILE_SOUNDS = {
+  punch: punchUrl,
+  victory: victoryUrl,
+  defeat: defeatUrl,
+};
 
 export const setGlobalMute = (isMuted) => {
   IS_MUTED_GLOBAL = isMuted;
@@ -98,8 +108,12 @@ const generateSoundBlob = (type, durationSec, frequencyHz, vol = 0.5) => {
 
 // Pré-gera os sons e inicializa o Pool
 const generateCacheAndPool = () => {
+  Object.entries(FILE_SOUNDS).forEach(([key, url]) => {
+    if (!AUDIO_CACHE[key]) AUDIO_CACHE[key] = url;
+  });
+
   // 1. Gera os Blobs de som
-  if (Object.keys(AUDIO_CACHE).length === 0) {
+  {
       const sounds = {
         'coin': { type: 'sine', freq: 1600, dur: 0.1 },
         'pop': { type: 'sine', freq: 600, dur: 0.05 },
@@ -120,6 +134,7 @@ const generateCacheAndPool = () => {
       };
 
       Object.entries(sounds).forEach(([key, config]) => {
+        if (AUDIO_CACHE[key]) return;
         try {
           const blob = generateSoundBlob(config.type, config.dur, config.freq);
           AUDIO_CACHE[key] = URL.createObjectURL(blob);
@@ -264,6 +279,19 @@ export const attachAudioUnlockListeners = () => {
 // Função Principal de Play
 export const playSound = (type) => {
   if (IS_MUTED_GLOBAL) return; 
+
+  if (FILE_SOUNDS[type]) {
+    if (audioPool.length === 0) generateCacheAndPool();
+    if (AUDIO_CACHE[type] && audioPool.length > 0) {
+      const audio = audioPool[poolIndex];
+      poolIndex = (poolIndex + 1) % AUDIO_POOL_SIZE;
+      audio.src = AUDIO_CACHE[type];
+      audio.volume = 0.65;
+      const p = audio.play();
+      if (p !== undefined) p.catch(() => {});
+      return;
+    }
+  }
 
   // --- ROTA DE FALLBACK (iOS) ---
   if (USE_FALLBACK_AUDIO || !audioCtx) {

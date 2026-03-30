@@ -149,28 +149,28 @@ export const QUEST_POOL = [
   { id: 'feed_3', type: 'FEED', target: 3, descKey: "quest_feed_3_desc", desc: 'Alimentar 3 vezes', reward: 15 },
   { id: 'feed_5', type: 'FEED', target: 5, descKey: "quest_feed_5_desc", desc: 'Alimentar 5 vezes', reward: 30 },
   { id: 'collect_common', type: 'COLLECT_COMMON', target: 3, descKey: "quest_collect_common_desc", desc: 'Coletar 3 Ovos Comuns', reward: 20 },
-  { id: 'collect_rare', type: 'COLLECT_RARE', target: 1, descKey: "quest_collect_rare_desc", desc: 'Coletar 1 Ovo Raro', reward: 50 },
+  { id: 'collect_rare', type: 'COLLECT_RARE', target: 1, descKey: "quest_collect_rare_desc", desc: 'Coletar 1 Ovo Raro', reward: 30 },
   { id: 'clean_poop', type: 'CLEAN', target: 2, descKey: "quest_clean_poop_desc", desc: 'Limpar 2 sujeiras', reward: 25 },
   { id: 'buy_supply', type: 'BUY_ITEM', target: 1, descKey: "quest_buy_supply_desc", desc: 'Comprar suprimentos', reward: 10 },
 ];
 
 export const ACHIEVEMENTS_LIST = [
   { id: 'FIRST_EGG', titleKey: "achievement_FIRST_EGG_title", descKey: "achievement_FIRST_EGG_desc", title: 'Primeiros Passos', desc: 'Colete seu primeiro ovo.', reward: 50, icon: '🥚', condition: (stats) => stats.total_eggs >= 1 },
-  { id: 'EGG_MASTER_1', titleKey: "achievement_EGG_MASTER_1_title", descKey: "achievement_EGG_MASTER_1_desc", title: 'Oveiro Iniciante', desc: 'Colete 50 ovos no total.', reward: 200, icon: '🧺', condition: (stats) => stats.total_eggs >= 50 },
-  { id: 'RICH_FARMER', titleKey: "achievement_RICH_FARMER_title", descKey: "achievement_RICH_FARMER_desc", title: 'Primeiro Milhão', desc: 'Acumule 1.000 moedas ganhas.', reward: 500, icon: '💰', condition: (stats) => stats.total_earned >= 1000 },
+  { id: 'EGG_MASTER_1', titleKey: "achievement_EGG_MASTER_1_title", descKey: "achievement_EGG_MASTER_1_desc", title: 'Oveiro Iniciante', desc: 'Colete 50 ovos no total.', reward: 80, icon: '🧺', condition: (stats) => stats.total_eggs >= 50 },
+  { id: 'RICH_FARMER', titleKey: "achievement_RICH_FARMER_title", descKey: "achievement_RICH_FARMER_desc", title: 'Primeiro Milhão', desc: 'Acumule 1.000 moedas ganhas.', reward: 100, icon: '💰', condition: (stats) => stats.total_earned >= 1000 },
   { id: 'CLEAN_FREAK', titleKey: "achievement_CLEAN_FREAK_title", descKey: "achievement_CLEAN_FREAK_desc", title: 'Faxineiro', desc: 'Limpe 10 sujeiras.', reward: 100, icon: '🧹', condition: (stats) => stats.total_cleaned >= 10 },
-  { id: 'VETERINARIAN', titleKey: "achievement_VETERINARIAN_title", descKey: "achievement_VETERINARIAN_desc", title: 'Veterinário', desc: 'Cure 5 galinhas doentes.', reward: 150, icon: '💉', condition: (stats) => stats.total_healed >= 5 },
-  { id: 'DEDICATED', titleKey: "achievement_DEDICATED_title", descKey: "achievement_DEDICATED_desc", title: 'Dedicado', desc: 'Jogue por 7 dias (no jogo).', reward: 300, icon: '📅', condition: (stats) => stats.days_played >= 7 },
-  { id: 'LEGENDARY_FIND', titleKey: "achievement_LEGENDARY_FIND_title", descKey: "achievement_LEGENDARY_FIND_desc", title: 'Sorte Grande', desc: 'Encontre 1 Ovo Lendário.', reward: 1000, icon: '🌟', condition: (stats) => stats.legendary_eggs >= 1 },
+  { id: 'VETERINARIAN', titleKey: "achievement_VETERINARIAN_title", descKey: "achievement_VETERINARIAN_desc", title: 'Veterinário', desc: 'Cure 5 galinhas doentes.', reward: 70, icon: '💉', condition: (stats) => stats.total_healed >= 5 },
+  { id: 'DEDICATED', titleKey: "achievement_DEDICATED_title", descKey: "achievement_DEDICATED_desc", title: 'Dedicado', desc: 'Jogue por 7 dias (no jogo).', reward: 90, icon: '📅', condition: (stats) => stats.days_played >= 7 },
+  { id: 'LEGENDARY_FIND', titleKey: "achievement_LEGENDARY_FIND_title", descKey: "achievement_LEGENDARY_FIND_desc", title: 'Sorte Grande', desc: 'Encontre 1 Ovo Lendário.', reward: 100, icon: '🌟', condition: (stats) => stats.legendary_eggs >= 1 },
 ];
 
 export const WHEEL_PRIZES = [
-  { id: 'coin_10', labelKey: "wheel_coin_10_label", label: '10 CHI', type: 'COIN', val: 10, color: '#fbbf24' },
-  { id: 'feed_3', labelKey: "wheel_feed_3_label", label: '3 Rações', type: 'ITEM', item: 'feed', val: 3, color: '#3b82f6' },
-  { id: 'coin_25', labelKey: "wheel_coin_25_label", label: '25 CHI', type: 'COIN', val: 25, color: '#fbbf24' },
-  { id: 'feed_5', labelKey: "wheel_feed_5_label", label: '5 Rações', type: 'ITEM', item: 'feed', val: 5, color: '#3b82f6' },
-  { id: 'coin_50', labelKey: "wheel_coin_50_label", label: '50 CHI', type: 'COIN', val: 50, color: '#fbbf24' },
-  { id: 'vaccine_1', labelKey: "wheel_vaccine_1_label", label: '1 Vacina', type: 'ITEM', item: 'vaccine', val: 1, color: '#ef4444' },
-  { id: 'feed_10', labelKey: "wheel_feed_10_label", label: '10 Rações', type: 'ITEM', item: 'feed', val: 10, color: '#3b82f6' },
-  { id: 'coin_100', labelKey: "wheel_coin_100_label", label: '100 CHI', type: 'COIN', val: 100, color: '#fbbf24' },
+  { id: 'coin_10', labelKey: "wheel_coin_10_label", label: '10 CHI', type: 'COIN', val: 10, color: '#fbbf24', weight: 20 },
+  { id: 'feed_3', labelKey: "wheel_feed_3_label", label: '3 Rações', type: 'ITEM', item: 'feed', val: 3, color: '#3b82f6', weight: 25 },
+  { id: 'coin_25', labelKey: "wheel_coin_25_label", label: '25 CHI', type: 'COIN', val: 25, color: '#fbbf24', weight: 12 },
+  { id: 'feed_5', labelKey: "wheel_feed_5_label", label: '5 Rações', type: 'ITEM', item: 'feed', val: 5, color: '#3b82f6', weight: 18 },
+  { id: 'coin_50', labelKey: "wheel_coin_50_label", label: '50 CHI', type: 'COIN', val: 50, color: '#fbbf24', weight: 3 },
+  { id: 'vaccine_1', labelKey: "wheel_vaccine_1_label", label: '1 Vacina', type: 'ITEM', item: 'vaccine', val: 1, color: '#ef4444', weight: 10 },
+  { id: 'feed_10', labelKey: "wheel_feed_10_label", label: '10 Rações', type: 'ITEM', item: 'feed', val: 10, color: '#3b82f6', weight: 8 },
+  { id: 'coin_100', labelKey: "wheel_coin_100_label", label: '100 CHI', type: 'COIN', val: 100, color: '#fbbf24', weight: 1 },
 ];

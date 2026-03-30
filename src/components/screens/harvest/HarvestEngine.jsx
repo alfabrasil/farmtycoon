@@ -138,7 +138,7 @@ const HarvestEngine = ({ config, onFinish, showToast }) => {
 
     // Throttle movement
     const now = Date.now();
-    const moveDelay = (stateRef.current.player?.speed || 1) > 1 ? 100 : 200;
+    const moveDelay = (stateRef.current.player?.speed || 1) > 1 ? 70 : 120;
     if (now - lastMoveRef.current < moveDelay) return;
     lastMoveRef.current = now;
 
@@ -171,8 +171,31 @@ const HarvestEngine = ({ config, onFinish, showToast }) => {
       const finalPushY = Math.max(0, Math.min(GRID_SIZE - 1, pushY));
 
       if (finalPushX !== currentOpp.x || finalPushY !== currentOpp.y) {
-        setOpp((o) => ({ ...o, x: finalPushX, y: finalPushY }));
-        playSound('pop');
+        const pushedItem = (currentItems || []).find((i) => i.x === finalPushX && i.y === finalPushY);
+        if (pushedItem) {
+          setItems((prevItems) => prevItems.filter((i) => i.id !== pushedItem.id));
+        }
+        setOpp((o) => {
+          let nextScore = o.score;
+          let nextSpeed = o.speed;
+          let nextShield = o.shield;
+          if (pushedItem) {
+            const pts = pushedItem.points || 0;
+            if (pts < 0 && nextShield > 0) {
+              nextShield -= 1;
+            } else {
+              nextScore += pts;
+            }
+            if (pushedItem.effect === 'SPEED') {
+              nextSpeed = 1.5;
+              setTimeout(() => setOpp((oo) => ({ ...oo, speed: 1 })), pushedItem.duration * 1000);
+            } else if (pushedItem.effect === 'SHIELD') {
+              nextShield = 2;
+            }
+          }
+          return { ...o, x: finalPushX, y: finalPushY, score: nextScore, speed: nextSpeed, shield: nextShield };
+        });
+        playSound('punch');
       }
       setPlayer((p) => ({ ...p, facing: newFacing }));
       return;
@@ -235,71 +258,108 @@ const HarvestEngine = ({ config, onFinish, showToast }) => {
   useEffect(() => {
     if (!isReady || !config?.opponent?.isBot) return;
 
-    const botSpeed = config.difficulty === 'EASY' ? 1200 : config.difficulty === 'MEDIUM' ? 800 : 500;
+    const botSpeed = config.difficulty === 'EASY' ? 800 : config.difficulty === 'MEDIUM' ? 450 : 250;
     
     const botInterval = setInterval(() => {
-      const { player, items, timeLeft } = stateRef.current;
+      const { player, opp, items, timeLeft } = stateRef.current;
       if (timeLeft <= 0) return;
+      if (!player || !opp) return;
 
-      setOpp(prev => {
-        // Simple AI: Find nearest high-value item
-        let target = null;
-        let minDist = Infinity;
+      let target = null;
+      let minDist = Infinity;
 
-        // Prioridade: Ovos dourados > Milho > Longe do player se o player tiver escudo
-        const goodItems = items.filter(i => i.points > 0 || i.effect);
-        
-        if (goodItems.length > 0) {
-          goodItems.forEach(item => {
-            const dist = Math.abs(item.x - prev.x) + Math.abs(item.y - prev.y);
-            if (dist < minDist) {
-              minDist = dist;
-              target = item;
+      const goodItems = (items || []).filter(i => (i.points || 0) > 0 || i.effect);
+      
+      if (goodItems.length > 0) {
+        goodItems.forEach(item => {
+          const dist = Math.abs(item.x - opp.x) + Math.abs(item.y - opp.y);
+          if (dist < minDist) {
+            minDist = dist;
+            target = item;
+          }
+        });
+      }
+
+      if (!target) {
+        const moves = [[0,1],[0,-1],[1,0],[-1,0]];
+        const move = moves[Math.floor(Math.random()*4)];
+        target = { x: opp.x + move[0], y: opp.y + move[1] };
+      }
+
+      let dx = 0;
+      let dy = 0;
+      if (target.x > opp.x) dx = 1;
+      else if (target.x < opp.x) dx = -1;
+      else if (target.y > opp.y) dy = 1;
+      else if (target.y < opp.y) dy = -1;
+
+      const nextOppFacing = dx > 0 ? 'RIGHT' : dx < 0 ? 'LEFT' : opp.facing;
+
+      let nx = Math.max(0, Math.min(GRID_SIZE - 1, opp.x + dx));
+      let ny = Math.max(0, Math.min(GRID_SIZE - 1, opp.y + dy));
+
+      if (nx === player.x && ny === player.y) {
+        const pushX = player.x + dx;
+        const pushY = player.y + dy;
+        if (pushX >= 0 && pushX < GRID_SIZE && pushY >= 0 && pushY < GRID_SIZE) {
+          const pushedItem = (items || []).find((i) => i.x === pushX && i.y === pushY);
+          if (pushedItem) setItems((prevItems) => prevItems.filter((i) => i.id !== pushedItem.id));
+
+          let nextScore = player.score;
+          let nextSpeed = player.speed;
+          let nextShield = player.shield;
+          if (pushedItem) {
+            const pts = pushedItem.points || 0;
+            if (pts < 0 && nextShield > 0) {
+              nextShield -= 1;
+            } else {
+              nextScore += pts;
             }
-          });
+            if (pushedItem.effect === 'SPEED') {
+              nextSpeed = 1.5;
+              const duration = passive?.bonus === 'BUFF_EXTEND' ? pushedItem.duration * (1 + passive.value) : pushedItem.duration;
+              setTimeout(() => setPlayer((p) => ({ ...p, speed: baseSpeed })), duration * 1000);
+            } else if (pushedItem.effect === 'SHIELD') {
+              nextShield = 2;
+            }
+          }
+
+          setPlayer((p) => ({ ...p, x: pushX, y: pushY, score: nextScore, speed: nextSpeed, shield: nextShield }));
+          playSound('punch');
         }
+        setOpp((o) => ({ ...o, facing: nextOppFacing }));
+        return;
+      }
 
-        if (!target) {
-          // Move randomly if no items
-          const moves = [[0,1],[0,-1],[1,0],[-1,0]];
-          const move = moves[Math.floor(Math.random()*4)];
-          target = { x: prev.x + move[0], y: prev.y + move[1] };
-        }
+      const itemAtPos = (items || []).find(i => i.x === nx && i.y === ny);
+      if (itemAtPos) {
+        setItems(prevItems => prevItems.filter(i => i.id !== itemAtPos.id));
+      }
 
-        let dx = 0;
-        let dy = 0;
-        if (target.x > prev.x) dx = 1;
-        else if (target.x < prev.x) dx = -1;
-        else if (target.y > prev.y) dy = 1;
-        else if (target.y < prev.y) dy = -1;
-
-        let nx = Math.max(0, Math.min(GRID_SIZE - 1, prev.x + dx));
-        let ny = Math.max(0, Math.min(GRID_SIZE - 1, prev.y + dy));
-
-        // Bot collision with player
-        if (nx === player.x && ny === player.y) {
-           // Try to push player
-           const pushX = player.x + dx;
-           const pushY = player.y + dy;
-           if (pushX >= 0 && pushX < GRID_SIZE && pushY >= 0 && pushY < GRID_SIZE) {
-             setPlayer(p => ({ ...p, x: pushX, y: pushY }));
-           }
-           return prev;
-        }
-
-        // Collect item
-        const itemAtPos = items.find(i => i.x === nx && i.y === ny);
+      setOpp((o) => {
+        let nextScore = o.score;
+        let nextSpeed = o.speed;
+        let nextShield = o.shield;
         if (itemAtPos) {
-          setItems(prevItems => prevItems.filter(i => i.id !== itemAtPos.id));
-          return { ...prev, x: nx, y: ny, score: prev.score + (itemAtPos.points || 0) };
+          const pts = itemAtPos.points || 0;
+          if (pts < 0 && nextShield > 0) {
+            nextShield -= 1;
+          } else {
+            nextScore += pts;
+          }
+          if (itemAtPos.effect === 'SPEED') {
+            nextSpeed = 1.5;
+            setTimeout(() => setOpp((oo) => ({ ...oo, speed: 1 })), itemAtPos.duration * 1000);
+          } else if (itemAtPos.effect === 'SHIELD') {
+            nextShield = 2;
+          }
         }
-
-        return { ...prev, x: nx, y: ny };
+        return { ...o, x: nx, y: ny, score: nextScore, speed: nextSpeed, shield: nextShield, facing: nextOppFacing };
       });
     }, botSpeed);
 
     return () => clearInterval(botInterval);
-  }, [isReady, config?.difficulty, config?.opponent?.isBot]);
+  }, [isReady, config?.difficulty, config?.opponent?.isBot, passive, baseSpeed]);
 
   return (
     <div className="flex flex-col h-full bg-slate-900 p-4 select-none">
