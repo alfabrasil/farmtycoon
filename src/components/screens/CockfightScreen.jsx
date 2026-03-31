@@ -60,8 +60,8 @@ const CockfightScreen = ({ onBack, balance, setBalance, showToast }) => {
   
   const [inventory, setInventory] = useState(() => {
     const defaults = [
-      { id: 'hp_potion', name: 'HP Potion', icon: '🧪', type: 'hp', value: 50, count: 0, price: 50 },
-      { id: 'mp_potion', name: 'Energy Potion', icon: '⚡', type: 'energy', value: 50, count: 0, price: 30 },
+      { id: 'hp_potion', name: 'HP Potion', icon: '🧪', type: 'hp', value: 100, count: 0, price: 50 },
+      { id: 'mp_potion', name: 'Energy Potion', icon: '⚡', type: 'energy', value: 100, count: 0, price: 30 },
       { id: 'shield_item', name: 'Shield', icon: '🛡️', type: 'shield', value: 90, count: 0, price: 50 }
     ];
     try {
@@ -428,7 +428,7 @@ const CockfightScreen = ({ onBack, balance, setBalance, showToast }) => {
   }
 
   return (
-    <div className="p-4 md:p-6 h-full flex flex-col max-w-5xl mx-auto w-full">
+    <div className="h-full flex flex-col max-w-5xl mx-auto w-full">
       <div className="flex justify-between items-center mb-4 md:mb-8 shrink-0">
         <button onClick={handleBack} className="p-2 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors">
           <X className="text-slate-600 w-5 h-5 md:w-6 md:h-6" />
@@ -454,7 +454,7 @@ const CockfightScreen = ({ onBack, balance, setBalance, showToast }) => {
                 {/* Stats do Galo Atual */}
                 <div className="bg-white rounded-3xl p-4 md:p-6 shadow-xl border-b-4 border-slate-200">
                   <div className="flex justify-between items-start mb-6 gap-2">
-                    <div className="flex items-center gap-2 md:gap-4">
+                    <div className="flex items-center gap-2 md:gap-4 min-w-0">
                       <div className="w-12 h-12 md:w-16 md:h-16 bg-slate-50 rounded-2xl flex items-center justify-center border-2 border-slate-100 shadow-sm overflow-hidden shrink-0">
                         <RoosterSprite 
                           colorKey={rooster.color} 
@@ -462,8 +462,8 @@ const CockfightScreen = ({ onBack, balance, setBalance, showToast }) => {
                           size={48} 
                         />
                       </div>
-                      <div>
-                        <h3 className="font-black text-slate-800 text-sm md:text-xl leading-tight">{t('cockfight_current_fighter')}</h3>
+                      <div className="min-w-0">
+                        <h3 className="font-black text-slate-800 text-sm md:text-xl leading-tight truncate">{t('cockfight_current_fighter')}</h3>
                         <div className="flex items-center gap-1 md:gap-2 mt-1">
                           <span className="bg-red-600 text-white text-[8px] md:text-[10px] px-2 py-0.5 rounded-full font-black uppercase">{t('cockfight_level')} {rooster.level}</span>
                           <span className="text-[10px] md:text-xs font-bold text-slate-400">{t('cockfight_wins_label', [rooster.wins])}</span>
@@ -472,17 +472,17 @@ const CockfightScreen = ({ onBack, balance, setBalance, showToast }) => {
                     </div>
                     <div className="flex gap-2 md:gap-4 shrink-0">
                       <div className="flex flex-col items-center gap-1">
-                        <button onClick={() => setGameState('SHOP')} className="bg-slate-100 hover:bg-slate-200 p-2 rounded-xl transition-colors relative" title={t('cockfight_action_shop')}>
+                        <button onClick={() => setGameState('SHOP')} className="bg-slate-100 hover:bg-slate-200 p-2 sm:p-2.5 rounded-xl transition-colors relative" title={t('cockfight_action_shop')}>
                           <ShoppingBag size={20} className="text-slate-600" />
                           <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] font-black w-4 h-4 rounded-full flex items-center justify-center">{inventory.reduce((acc, i) => acc + i.count, 0)}</span>
                         </button>
-                        <span className="text-[9px] font-black text-slate-500">{t('cockfight_action_shop')}</span>
+                        <span className="hidden sm:block text-[9px] font-black text-slate-500">{t('cockfight_action_shop')}</span>
                       </div>
                       <div className="flex flex-col items-center gap-1">
-                        <button onClick={() => setGameState('SELECTING_ROOSTER')} className="bg-slate-100 hover:bg-slate-200 p-2 rounded-xl transition-colors" title={t('cockfight_action_change_rooster')}>
+                        <button onClick={() => setGameState('SELECTING_ROOSTER')} className="bg-slate-100 hover:bg-slate-200 p-2 sm:p-2.5 rounded-xl transition-colors" title={t('cockfight_action_change_rooster')}>
                           <RefreshCw size={20} className="text-slate-600" />
                         </button>
-                        <span className="text-[9px] font-black text-slate-500">{t('cockfight_action_change_rooster')}</span>
+                        <span className="hidden sm:block text-[9px] font-black text-slate-500">{t('cockfight_action_change_rooster')}</span>
                       </div>
                     </div>
                   </div>
@@ -543,9 +543,9 @@ const CockfightScreen = ({ onBack, balance, setBalance, showToast }) => {
                   <button 
                     onClick={startBattle} 
                     disabled={isProcessing}
-                    className="w-full bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white py-4 rounded-2xl font-black text-lg shadow-xl shadow-red-200 border-b-4 border-red-800 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-2 uppercase"
+                    className="w-full bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white py-4 rounded-2xl font-black text-base sm:text-lg shadow-xl shadow-red-200 border-b-4 border-red-800 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-2 uppercase whitespace-nowrap"
                   >
-                    {isProcessing ? <RefreshCw className="animate-spin" /> : <>{t('cockfight_find_opponent')} <ChevronRight /></>}
+                    {isProcessing ? <RefreshCw className="animate-spin" /> : <><span className="whitespace-nowrap">{t('cockfight_find_opponent')}</span> <ChevronRight className="shrink-0" /></>}
                   </button>
                 </div>
 

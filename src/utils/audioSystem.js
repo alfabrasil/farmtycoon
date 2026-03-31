@@ -5,6 +5,14 @@
 import punchUrl from '../public/sounds/punch.mp3';
 import victoryUrl from '../public/sounds/victory.MP3';
 import defeatUrl from '../public/sounds/defeat.MP3';
+import fireUrl from '../public/sounds/fire.MP3';
+import waterUrl from '../public/sounds/water.MP3';
+import earthUrl from '../public/sounds/earth.MP3';
+import airUrl from '../public/sounds/air.MP3';
+import ultFireUrl from '../public/sounds/ult_fire.MP3';
+import ultWaterUrl from '../public/sounds/ult_water.MP3';
+import ultEarthUrl from '../public/sounds/ult_earth.MP3';
+import ultAirUrl from '../public/sounds/ult_air.MP3';
 
 let IS_MUTED_GLOBAL = false;
 let USE_FALLBACK_AUDIO = false; // Ativado automaticamente no iOS
@@ -18,6 +26,14 @@ const FILE_SOUNDS = {
   punch: punchUrl,
   victory: victoryUrl,
   defeat: defeatUrl,
+  fire: fireUrl,
+  water: waterUrl,
+  earth: earthUrl,
+  air: airUrl,
+  ult_fire: ultFireUrl,
+  ult_water: ultWaterUrl,
+  ult_earth: ultEarthUrl,
+  ult_air: ultAirUrl
 };
 
 export const setGlobalMute = (isMuted) => {

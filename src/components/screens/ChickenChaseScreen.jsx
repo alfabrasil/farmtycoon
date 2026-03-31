@@ -254,13 +254,13 @@ const ChickenChaseScreen = ({ onBack, balance, setBalance, showToast }) => {
   );
 
   return (
-    <div className="animate-in slide-in-from-bottom-10 fade-in pb-24 md:pb-0 min-h-screen bg-slate-100">
+    <div className="animate-in slide-in-from-bottom-10 fade-in bg-slate-100 w-full">
       {/* Header */}
-      <div className="bg-slate-900 text-white p-4 rounded-3xl shadow-xl mb-6 z-20">
+      <div className="bg-slate-900 text-white p-3 sm:p-4 rounded-2xl sm:rounded-3xl shadow-xl mb-5 sm:mb-6 z-20">
         <div className="flex items-center justify-between mb-4">
           <button onClick={onBack} className="bg-white/10 p-2 rounded-full hover:bg-white/20"><X size={20}/></button>
-          <h1 className="text-xl font-black flex items-center gap-2"><Dices className="text-pink-500"/> {t('chase_title')}</h1>
-          <div className="bg-yellow-500 text-slate-900 px-3 py-1 rounded-full font-bold text-sm inline-flex items-center gap-1"><ChiIcon className="w-5 h-5" /> {balance}</div>
+          <h1 className="text-lg sm:text-xl font-black flex items-center gap-2"><Dices className="text-pink-500"/> {t('chase_title')}</h1>
+          <div className="bg-yellow-500 text-slate-900 px-3 py-1 rounded-full font-black text-xs sm:text-sm inline-flex items-center gap-1"><ChiIcon className="w-5 h-5" /> {balance}</div>
         </div>
         
         <div className="flex p-1 bg-slate-800 rounded-xl">
@@ -285,23 +285,31 @@ const ChickenChaseScreen = ({ onBack, balance, setBalance, showToast }) => {
         </div>
       </div>
 
-      <div className="px-4 pb-8">
+      <div className="px-2 sm:px-4 pb-6">
         {activeTab === 'SOLO' && (
           <div className="flex flex-col gap-6">
             {soloState === 'IDLE' ? (
-              <div className="bg-white rounded-3xl p-6 shadow-xl text-center border-b-8 border-pink-100">
+              <div className="bg-white rounded-3xl p-4 sm:p-6 shadow-xl text-center border-b-8 border-pink-100">
                 <div className="w-24 h-24 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl shadow-inner">🎯</div>
-                <h2 className="text-2xl font-black text-slate-800 mb-2">{t('chase_solo_title')}</h2>
-                <p className="text-slate-500 mb-6">{t('chase_solo_desc', [MINIGAME_CONFIG.SOLO_ATTEMPTS])}</p>
+                <h2 className="text-xl sm:text-2xl font-black text-slate-800 mb-2">{t('chase_solo_title')}</h2>
+                <p className="text-slate-500 text-sm sm:text-base mb-6">{t('chase_solo_desc', [MINIGAME_CONFIG.SOLO_ATTEMPTS])}</p>
                 
-                <div className="bg-slate-50 p-4 rounded-xl mb-6 border border-slate-200">
+                <div className="bg-slate-50 p-3 sm:p-4 rounded-xl mb-6 border border-slate-200">
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-slate-500">{t('chase_bet')}</span>
-                    <span className="font-bold text-slate-800 inline-flex items-center gap-1">{soloBet} <ChiIcon className="w-4 h-4" /></span>
+                    <span className="text-slate-500 text-sm">{t('chase_bet')}</span>
+                    <span className="font-black text-slate-800 inline-flex items-center gap-1 text-sm">
+                      {soloBet} <ChiIcon className="w-4 h-4" />
+                    </span>
                   </div>
-                  <div className="flex justify-between items-center text-green-600 mb-3">
-                    <span className="">{t('chase_prize')}</span>
-                    <span className="font-black text-lg inline-flex items-center gap-1">+{Math.floor(soloBet * MINIGAME_CONFIG.SOLO_REWARD_MULTIPLIER - soloBet)} ({t('chase_total')} {Math.floor(soloBet * MINIGAME_CONFIG.SOLO_REWARD_MULTIPLIER)}) <ChiIcon className="w-4 h-4" /></span>
+                  <div className="text-green-600 mb-3 flex justify-between items-center gap-2">
+                    <span className="text-slate-500 text-sm">{t('chase_prize')}</span>
+                    <span className="font-black text-slate-800 inline-flex items-center gap-1 text-sm">
+                      +{Math.floor(soloBet * MINIGAME_CONFIG.SOLO_REWARD_MULTIPLIER - soloBet)}
+                      <span className="text-green-700/80 font-black text-[12px]">
+                        ({t('chase_total')} {Math.floor(soloBet * MINIGAME_CONFIG.SOLO_REWARD_MULTIPLIER)})
+                      </span>
+                      <ChiIcon className="w-4 h-4 shrink-0" />
+                    </span>
                   </div>
                   <div className="grid grid-cols-3 gap-2">
                     {[10, 50, 100].map(v => (
@@ -318,7 +326,7 @@ const ChickenChaseScreen = ({ onBack, balance, setBalance, showToast }) => {
                   </div>
                 </div>
 
-                <button onClick={startSoloGame} className="w-full bg-pink-500 hover:bg-pink-600 text-white py-4 rounded-xl font-black shadow-lg border-b-4 border-pink-700 active:border-b-0 active:translate-y-1 transition-all">
+                <button onClick={startSoloGame} className="w-full bg-pink-500 hover:bg-pink-600 text-white py-4 rounded-xl font-black shadow-lg border-b-4 border-pink-700 active:border-b-0 active:translate-y-1 transition-all text-base">
                   {t('chase_btn_play')}
                 </button>
               </div>

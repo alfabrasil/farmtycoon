@@ -135,3 +135,72 @@
     50% { opacity: 1; }
     100% { transform: translate(50px, -50px) rotate(-45deg); opacity: 0; }
 }
+
+.vfx-ultimate {
+    width: 240px;
+    height: 240px;
+    z-index: 120;
+}
+
+.vfx-ultimate-fire { --vfx-color1: rgba(255, 80, 0, 0.95); --vfx-color2: rgba(255, 200, 0, 0.85); }
+.vfx-ultimate-water { --vfx-color1: rgba(0, 210, 255, 0.95); --vfx-color2: rgba(0, 110, 255, 0.85); }
+.vfx-ultimate-earth { --vfx-color1: rgba(60, 220, 120, 0.95); --vfx-color2: rgba(180, 255, 80, 0.85); }
+.vfx-ultimate-air { --vfx-color1: rgba(255, 255, 255, 0.90); --vfx-color2: rgba(150, 170, 255, 0.85); }
+
+@keyframes vfx-ultimate-flash {
+    0% { transform: translate(-50%, -50%) scale(0.2); opacity: 0.0; filter: brightness(2.5); }
+    15% { opacity: 1; }
+    45% { transform: translate(-50%, -50%) scale(1.15); opacity: 0.85; }
+    100% { transform: translate(-50%, -50%) scale(1.8); opacity: 0; filter: brightness(1); }
+}
+
+.vfx-ultimate-flash {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,255,255,0.95) 0%, var(--vfx-color2) 35%, var(--vfx-color1) 62%, rgba(0,0,0,0) 75%);
+    mix-blend-mode: screen;
+    animation: vfx-ultimate-flash 0.8s ease-out forwards;
+}
+
+.vfx-ultimate-charge {
+    filter: saturate(1.25);
+}
+
+@keyframes vfx-ultimate-ring {
+    0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0.0; }
+    10% { opacity: 0.9; }
+    100% { transform: translate(-50%, -50%) scale(1.6); opacity: 0; }
+}
+
+.vfx-ultimate-ring {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 92%;
+    height: 92%;
+    border-radius: 50%;
+    border: 4px solid var(--vfx-color1);
+    box-shadow: 0 0 28px var(--vfx-color2), inset 0 0 18px rgba(255,255,255,0.15);
+    mix-blend-mode: screen;
+    animation: vfx-ultimate-ring 0.9s ease-out forwards;
+}
+
+@keyframes vfx-ultimate-shard {
+    0% { transform: translate(-50%, -50%) rotate(var(--rot)) translate(0,0) scale(0.7); opacity: 0; filter: blur(0px); }
+    15% { opacity: 1; }
+    100% { transform: translate(-50%, -50%) rotate(var(--rot)) translate(var(--tx), var(--ty)) scale(0.15); opacity: 0; filter: blur(1.2px); }
+}
+
+.vfx-ultimate-shard {
+    position: absolute;
+    width: 70px;
+    height: 6px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, rgba(0,0,0,0), var(--vfx-color2), rgba(255,255,255,0.95), var(--vfx-color1), rgba(0,0,0,0));
+    mix-blend-mode: screen;
+    animation: vfx-ultimate-shard 0.75s ease-out forwards;
+}

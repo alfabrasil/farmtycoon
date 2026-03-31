@@ -16,6 +16,39 @@ export const VFX = {
         return container;
     },
 
+    createContainerWithClass: function(targetElement, extraClassName) {
+        const container = this.createContainer(targetElement);
+        if (!container) return null;
+        container.className = `vfx-container ${extraClassName || ''}`.trim();
+        return container;
+    },
+
+    spawnUltimateCore: function(container, kind = 'impact') {
+        const flash = document.createElement('div');
+        flash.className = `vfx-ultimate-flash vfx-ultimate-${kind}`;
+        container.appendChild(flash);
+
+        const ring = document.createElement('div');
+        ring.className = `vfx-ultimate-ring vfx-ultimate-${kind}`;
+        container.appendChild(ring);
+
+        for (let i = 0; i < 10; i++) {
+            const shard = document.createElement('div');
+            shard.className = `vfx-ultimate-shard vfx-ultimate-${kind}`;
+            const angle = Math.random() * Math.PI * 2;
+            const dist = 90 + Math.random() * 90;
+            const tx = Math.cos(angle) * dist + 'px';
+            const ty = Math.sin(angle) * dist + 'px';
+            shard.style.setProperty('--tx', tx);
+            shard.style.setProperty('--ty', ty);
+            shard.style.setProperty('--rot', `${Math.round((angle * 180) / Math.PI)}deg`);
+            shard.style.left = '50%';
+            shard.style.top = '50%';
+            shard.style.animationDelay = (Math.random() * 0.05) + 's';
+            container.appendChild(shard);
+        }
+    },
+
     playFire: function(targetElement) {
         const container = this.createContainer(targetElement);
         if (!container) return;
@@ -100,6 +133,19 @@ export const VFX = {
             case 'water': this.playWater(targetElement); break;
             case 'earth': this.playEarth(targetElement); break;
             case 'air': this.playAir(targetElement); break;
+        }
+    },
+
+    playUltimate: function(element, attackerElement, targetElement) {
+        if (!element) return;
+
+        if (attackerElement) {
+            const c1 = this.createContainerWithClass(attackerElement, `vfx-ultimate vfx-ultimate-${element}`);
+            if (c1) this.spawnUltimateCore(c1, 'charge');
+        }
+        if (targetElement) {
+            const c2 = this.createContainerWithClass(targetElement, `vfx-ultimate vfx-ultimate-${element}`);
+            if (c2) this.spawnUltimateCore(c2, 'impact');
         }
     }
 };

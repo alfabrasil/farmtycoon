@@ -451,7 +451,14 @@ export default function App() {
   };
 
   useEffect(() => {
+    if (view !== 'COOP') {
+      setFox(null);
+    }
+  }, [view]);
+
+  useEffect(() => {
     const spawnInterval = setInterval(() => {
+      if (view !== 'COOP') return;
       if (upgrades.FENCE) return; 
       if (session === 'GAME' && !fox && !isNight && foxSpawnDay === dayCount && foxSpawnCount < 3 && Math.random() < 0.3) {
         const newFox = { id: uuidv4(), x: Math.random() * 80 + 10, y: Math.random() * 60 + 20 };
@@ -471,7 +478,7 @@ export default function App() {
       }
     }, 30000);
     return () => clearInterval(spawnInterval);
-  }, [fox, session, isNight, upgrades.FENCE, foxSpawnCount, foxSpawnDay, dayCount]);
+  }, [fox, session, view, isNight, upgrades.FENCE, foxSpawnCount, foxSpawnDay, dayCount]);
 
   useEffect(() => {
     if (automations.CLEANSWEEP?.active) {
