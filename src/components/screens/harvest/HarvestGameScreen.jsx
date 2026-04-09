@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { X, Trophy, History, Play, Info, Coins, Zap, Shield, Skull, ChevronLeft } from 'lucide-react';
 import { playSound } from '../../../utils/audioSystem';
 import { useLanguage } from '../../../contexts/LanguageContext';
+import { appendTreasuryLedgerEntry, computePvPFeeSplit } from '../../../utils/treasuryLedger';
 
 // Componentes Internos
 import HarvestLobby from './HarvestLobby';
@@ -59,6 +60,16 @@ const HarvestGameScreen = ({ onBack, balance, setBalance, showToast, chickens })
         return;
       }
       setBalance(prev => prev - config.bet);
+      const split = computePvPFeeSplit(config.bet, 2);
+      appendTreasuryLedgerEntry({
+        type: 'FEE',
+        source: 'HARVEST_PVP',
+        bet: config.bet,
+        bettors: 2,
+        fee: split.feeTotal,
+        split,
+        meta: { opponent: config?.opponent?.name, difficulty: config?.difficulty, time: config?.time },
+      });
     }
     setGameConfig(config);
     setGameState('PLAYING');

@@ -1,14 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { X, Dices, Users2, Trophy, HelpCircle, DoorOpen, Play, CheckCircle2, AlertCircle, Swords } from 'lucide-react';
+import { X, Dices, Users2, Trophy, HelpCircle, DoorOpen, Play, CheckCircle2, AlertCircle, Swords, Landmark } from 'lucide-react';
 import { MINIGAME_CONFIG } from '../../data/gameConfig';
 import { playSound } from '../../utils/audioSystem';
 import { useLanguage } from '../../contexts/LanguageContext';
 import CockfightScreen from './CockfightScreen';
 import ChiIcon from '../ui/ChiIcon';
+import MinigameTreasury from './minigame/MinigameTreasury';
+import { appendTreasuryLedgerEntry, computePvPFeeSplit } from '../../utils/treasuryLedger';
+
+const CHASE_PVP_HISTORY_KEY = 'farm_chase_pvp_history_v1';
 
 const ChickenChaseScreen = ({ onBack, balance, setBalance, showToast }) => {
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState('SOLO'); // 'SOLO' | 'PVP' | 'RINHA'
+  const [showTreasury, setShowTreasury] = useState(false);
   
   // --- STATE: SOLO MODE ---
   const [soloState, setSoloState] = useState('IDLE'); // IDLE, PLAYING, WON, LOST
@@ -64,6 +69,15 @@ const ChickenChaseScreen = ({ onBack, balance, setBalance, showToast }) => {
     } catch (e) {
       return '';
     }
+  };
+
+  const pushChasePvpHistory = (item) => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(CHASE_PVP_HISTORY_KEY) || '[]');
+      const next = Array.isArray(saved) ? saved : [];
+      next.unshift(item);
+      localStorage.setItem(CHASE_PVP_HISTORY_KEY, JSON.stringify(next.slice(0, 100)));
+    } catch (e) {}
   };
 
   const addChallengeToBook = (challenge) => {
@@ -152,6 +166,16 @@ const ChickenChaseScreen = ({ onBack, balance, setBalance, showToast }) => {
     }
 
     setBalance(prev => prev - challenge.bet);
+    const split = computePvPFeeSplit(challenge.bet, 2);
+    appendTreasuryLedgerEntry({
+      type: 'FEE',
+      source: 'CHASE_PVP',
+      bet: challenge.bet,
+      bettors: 2,
+      fee: split.feeTotal,
+      split,
+      meta: { opponent: challenge.player },
+    });
     setCurrentChallenge(challenge);
     setPvpState('PLAYING');
     setPvpTurn('PLAYER'); // Challenger always starts? Let's say Player starts for better UX
@@ -188,10 +212,28 @@ const ChickenChaseScreen = ({ onBack, balance, setBalance, showToast }) => {
         setBalance(prev => prev + winAmount);
         playSound('victory');
         showToast(t('chase_won_msg', [winAmount]), 'success');
+        pushChasePvpHistory({
+          id: Date.now().toString(),
+          created_at: new Date().toISOString(),
+          bet: currentChallenge.bet,
+          result: 'WIN',
+          payout: winAmount,
+          opponent: currentChallenge.player,
+          mode: 'CHASE_PVP',
+        });
       } else {
         setPvpState('LOST');
         playSound('defeat');
         showToast(t('chase_found_chicken', [currentChallenge.player]), 'error');
+        pushChasePvpHistory({
+          id: Date.now().toString(),
+          created_at: new Date().toISOString(),
+          bet: currentChallenge.bet,
+          result: 'LOSS',
+          payout: 0,
+          opponent: currentChallenge.player,
+          mode: 'CHASE_PVP',
+        });
       }
     } else {
       playSound(who === 'PLAYER' ? 'pop' : 'pop_soft');
@@ -257,35 +299,52 @@ const ChickenChaseScreen = ({ onBack, balance, setBalance, showToast }) => {
     <div className="animate-in slide-in-from-bottom-10 fade-in bg-slate-100 w-full">
       {/* Header */}
       <div className="bg-slate-900 text-white p-3 sm:p-4 rounded-2xl sm:rounded-3xl shadow-xl mb-5 sm:mb-6 z-20">
-        <div className="flex items-center justify-between mb-4">
-          <button onClick={onBack} className="bg-white/10 p-2 rounded-full hover:bg-white/20"><X size={20}/></button>
-          <h1 className="text-lg sm:text-xl font-black flex items-center gap-2"><Dices className="text-pink-500"/> {t('chase_title')}</h1>
-          <div className="bg-yellow-500 text-slate-900 px-3 py-1 rounded-full font-black text-xs sm:text-sm inline-flex items-center gap-1"><ChiIcon className="w-5 h-5" /> {balance}</div>
+        <div className="flex items-center gap-2 mb-4">
+          <button onClick={onBack} className="bg-white/10 p-2 rounded-full hover:bg-white/20 shrink-0"><X size={20}/></button>
+          <h1 className="text-base sm:text-xl font-black flex items-center gap-2 min-w-0 flex-1">
+            <Dices className="text-pink-500 shrink-0"/>
+            <span className="truncate whitespace-nowrap">{t('chase_title')}</span>
+          </h1>
+          <div className="flex items-center gap-2 shrink-0">
+            <button onClick={() => setShowTreasury(true)} className="bg-white/10 p-2 rounded-full hover:bg-white/20" title={t('minigame_treasury_title') || 'Tesouraria'}>
+              <Landmark className="w-5 h-5 text-white" />
+            </button>
+            <div className="bg-yellow-500 text-slate-900 px-2.5 sm:px-3 py-1 rounded-full font-black text-[11px] sm:text-sm inline-flex items-center gap-1 whitespace-nowrap">
+              <ChiIcon className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+              <span className="tabular-nums">{balance}</span>
+            </div>
+          </div>
         </div>
         
-        <div className="flex p-1 bg-slate-800 rounded-xl">
-          <button 
-            onClick={() => setActiveTab('SOLO')}
-            className={`flex-1 py-2 rounded-lg font-bold text-[10px] md:text-sm transition-all ${activeTab === 'SOLO' ? 'bg-pink-500 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
-          >
-            {t('chase_tab_solo')}
-          </button>
-          <button 
-            onClick={() => setActiveTab('PVP')}
-            className={`flex-1 py-2 rounded-lg font-bold text-[10px] md:text-sm transition-all ${activeTab === 'PVP' ? 'bg-purple-500 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
-          >
-            {t('chase_tab_pvp')}
-          </button>
-          <button 
-            onClick={() => setActiveTab('RINHA')}
-            className={`flex-1 py-2 rounded-lg font-bold text-[10px] md:text-sm transition-all ${activeTab === 'RINHA' ? 'bg-red-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
-          >
-            {t('chase_tab_cockfight')}
-          </button>
-        </div>
+        {!showTreasury && (
+          <div className="flex p-1 bg-slate-800 rounded-xl">
+            <button 
+              onClick={() => setActiveTab('SOLO')}
+              className={`flex-1 py-2 rounded-lg font-bold text-[10px] md:text-sm transition-all ${activeTab === 'SOLO' ? 'bg-pink-500 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+            >
+              {t('chase_tab_solo')}
+            </button>
+            <button 
+              onClick={() => setActiveTab('PVP')}
+              className={`flex-1 py-2 rounded-lg font-bold text-[10px] md:text-sm transition-all ${activeTab === 'PVP' ? 'bg-purple-500 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+            >
+              {t('chase_tab_pvp')}
+            </button>
+            <button 
+              onClick={() => setActiveTab('RINHA')}
+              className={`flex-1 py-2 rounded-lg font-bold text-[10px] md:text-sm transition-all ${activeTab === 'RINHA' ? 'bg-red-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+            >
+              {t('chase_tab_cockfight')}
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="px-2 sm:px-4 pb-6">
+        {showTreasury && (
+          <MinigameTreasury onBack={() => setShowTreasury(false)} />
+        )}
+        {!showTreasury && (<>
         {activeTab === 'SOLO' && (
           <div className="flex flex-col gap-6">
             {soloState === 'IDLE' ? (
@@ -560,6 +619,7 @@ const ChickenChaseScreen = ({ onBack, balance, setBalance, showToast }) => {
         {activeTab === 'RINHA' && (
           <CockfightScreen onBack={() => setActiveTab('SOLO')} balance={balance} setBalance={setBalance} showToast={showToast} />
         )}
+        </>)}
       </div>
     </div>
   );

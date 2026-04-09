@@ -1,22 +1,49 @@
-import React from 'react';
-import { Landmark, Users2, TrendingUp, Zap, Megaphone, Code, Info, History, Trophy, Stars, Timer } from 'lucide-react';
+import React, { useMemo } from 'react';
+import { Landmark, Megaphone, Code, Info, Trophy, Stars, Timer, Users2, X } from 'lucide-react';
 import { LEADERBOARD_MOCK } from '../../../data/gameConfig';
 import { useLanguage } from '../../../contexts/LanguageContext';
+import { computePvPFeeSplit, filterLedgerBySource, loadTreasuryLedger, sumTreasuryLedger } from '../../../utils/treasuryLedger';
 
 const HarvestTreasury = ({ history, onBack }) => {
   const { t } = useLanguage();
-  // ENGENHARIA: Cálculo da Tesouraria Baseado no Histórico PvP Real
-  const pvpMatches = history.filter(h => h.isPvP);
-  const totalTax = pvpMatches.reduce((acc, curr) => acc + (curr.bet * 0.2), 0);
-  
-  const distribution = {
-    tournaments: totalTax * 0.5,
-    marketing: totalTax * 0.3,
-    development: totalTax * 0.2
-  };
+  const sources = useMemo(() => {
+    const ledger = loadTreasuryLedger();
+    const harvestEntries = filterLedgerBySource(ledger, 'HARVEST_PVP');
+    const chaseEntries = filterLedgerBySource(ledger, 'CHASE_PVP');
+    const cockfightEntries = filterLedgerBySource(ledger, 'COCKFIGHT_PVP');
+    const harvest = sumTreasuryLedger(harvestEntries);
+    const chase = sumTreasuryLedger(chaseEntries);
+    const cockfight = sumTreasuryLedger(cockfightEntries);
+    const total = sumTreasuryLedger(ledger);
+
+    if (harvestEntries.length > 0 || chaseEntries.length > 0 || cockfightEntries.length > 0) {
+      return { harvest, chase, cockfight, total };
+    }
+
+    const pvpMatches = (history || []).filter(h => h?.isPvP && Number.isFinite(Number(h?.bet)));
+    const fallbackHarvest = pvpMatches.reduce(
+      (acc, m) => {
+        const s = computePvPFeeSplit(Number(m.bet), 2);
+        acc.feeTotal += s.feeTotal;
+        acc.development += s.development;
+        acc.tournaments += s.tournaments;
+        acc.marketing += s.marketing;
+        acc.teamTotal += s.teamTotal;
+        acc.levels.lvl1 += s.levels.lvl1;
+        acc.levels.lvl2 += s.levels.lvl2;
+        acc.levels.lvl3 += s.levels.lvl3;
+        acc.levels.lvl4 += s.levels.lvl4;
+        acc.levels.lvl5 += s.levels.lvl5;
+        acc.count += 1;
+        return acc;
+      },
+      { feeTotal: 0, development: 0, tournaments: 0, marketing: 0, teamTotal: 0, levels: { lvl1: 0, lvl2: 0, lvl3: 0, lvl4: 0, lvl5: 0 }, count: 0 }
+    );
+    return { harvest: fallbackHarvest, chase: sumTreasuryLedger([]), cockfight: sumTreasuryLedger([]), total: fallbackHarvest };
+  }, [history]);
 
   // Lógica de Jackpot: 20% do Fundo de Torneios
-  const jackpotPool = distribution.tournaments * 0.4; // 40% do fundo de torneio vai pro jackpot
+  const jackpotPool = sources.total.tournaments * 0.4; // 40% do fundo de torneio vai pro jackpot
   const weeklyPoints = Number(localStorage.getItem('farm_harvest_weekly_points')) || 0;
   
   // Simulação de Ranking: Coloca o usuário em uma posição baseada nos pontos
@@ -31,14 +58,19 @@ const HarvestTreasury = ({ history, onBack }) => {
   return (
     <div className="p-4 md:p-8 max-w-2xl mx-auto animate-in slide-in-from-right-10 duration-500 pb-24">
       {/* Header */}
-      <div className="flex items-center gap-4 mb-8">
-        <div className="w-12 h-12 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center shadow-inner">
-          <Landmark size={28} />
+      <div className="flex items-center justify-between gap-3 mb-8">
+        <div className="flex items-center gap-4 min-w-0">
+          <div className="w-12 h-12 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center shadow-inner shrink-0">
+            <Landmark size={28} />
+          </div>
+          <div className="min-w-0">
+            <h2 className="text-2xl font-black text-slate-800 leading-none truncate">{t('harvest_treasury_title')}</h2>
+            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1 truncate">{t('harvest_treasury_subtitle')}</p>
+          </div>
         </div>
-        <div>
-          <h2 className="text-2xl font-black text-slate-800 leading-none">{t('harvest_treasury_title')}</h2>
-          <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">{t('harvest_treasury_subtitle')}</p>
-        </div>
+        <button onClick={onBack} className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 transition-colors shrink-0">
+          <X className="w-5 h-5 text-slate-700" />
+        </button>
       </div>
 
       {/* JACKPOT SEMANAL - NOVO */}
@@ -113,8 +145,9 @@ const HarvestTreasury = ({ history, onBack }) => {
           <span className="text-slate-400 font-black text-[10px] uppercase tracking-[0.3em] mb-2 block">{t('harvest_total_tax_balance')}</span>
           <div className="text-6xl font-black text-slate-800 flex items-center justify-center gap-3">
             <span className="text-3xl text-amber-500">💰</span>
-            {totalTax.toFixed(0)}
+            {sources.total.feeTotal}
           </div>
+          <div className="mt-2 text-xs font-bold text-slate-500">{t('minigame_total_matches') || 'Partidas consideradas'}: {sources.total.count}</div>
         </div>
       </div>
 
@@ -127,11 +160,11 @@ const HarvestTreasury = ({ history, onBack }) => {
             </div>
             <div>
               <div className="font-black text-slate-800">{t('harvest_tournament_fund')}</div>
-              <div className="text-[10px] font-bold text-slate-400 uppercase">{t('harvest_tax_collection_desc', [50])}</div>
+              <div className="text-[10px] font-bold text-slate-400 uppercase">{t('minigame_treasury_tournaments_rule') || '50% do pool'}</div>
             </div>
           </div>
           <div className="text-right">
-            <div className="text-xl font-black text-blue-600">+{distribution.tournaments.toFixed(0)}</div>
+            <div className="text-xl font-black text-blue-600">+{sources.total.tournaments}</div>
             <div className="text-[10px] font-black text-slate-300 uppercase">{t('harvest_available')}</div>
           </div>
         </div>
@@ -143,11 +176,11 @@ const HarvestTreasury = ({ history, onBack }) => {
             </div>
             <div>
               <div className="font-black text-slate-800">{t('harvest_marketing_fund')}</div>
-              <div className="text-[10px] font-bold text-slate-400 uppercase">{t('harvest_tax_collection_desc', [30])}</div>
+              <div className="text-[10px] font-bold text-slate-400 uppercase">{t('minigame_treasury_marketing_rule') || '30% do pool'}</div>
             </div>
           </div>
           <div className="text-right">
-            <div className="text-xl font-black text-pink-600">+{distribution.marketing.toFixed(0)}</div>
+            <div className="text-xl font-black text-pink-600">+{sources.total.marketing}</div>
             <div className="text-[10px] font-black text-slate-300 uppercase">{t('harvest_in_use')}</div>
           </div>
         </div>
@@ -159,12 +192,37 @@ const HarvestTreasury = ({ history, onBack }) => {
             </div>
             <div>
               <div className="font-black text-slate-800">{t('harvest_development_fund')}</div>
-              <div className="text-[10px] font-bold text-slate-400 uppercase">{t('harvest_tax_collection_desc', [20])}</div>
+              <div className="text-[10px] font-bold text-slate-400 uppercase">{t('minigame_treasury_development_rule') || '50% da taxa'}</div>
             </div>
           </div>
           <div className="text-right">
-            <div className="text-xl font-black text-indigo-600">+{distribution.development.toFixed(0)}</div>
+            <div className="text-xl font-black text-indigo-600">+{sources.total.development}</div>
             <div className="text-[10px] font-black text-slate-300 uppercase">{t('harvest_allocated')}</div>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-amber-50 text-amber-700 rounded-2xl flex items-center justify-center">
+                <Users2 size={24} />
+              </div>
+              <div>
+                <div className="font-black text-slate-800">{t('minigame_team_fund') || 'Time (Unilevel)'}</div>
+                <div className="text-[10px] font-bold text-slate-400 uppercase">{t('minigame_treasury_team_rule') || '20% do pool'}</div>
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-xl font-black text-amber-700">+{sources.total.teamTotal}</div>
+            </div>
+          </div>
+
+          <div className="mt-4 grid grid-cols-2 gap-2 text-xs font-bold text-slate-600">
+            <div className="bg-slate-50 rounded-2xl p-3 flex justify-between"><span>N1</span><span>+{sources.total.levels.lvl1}</span></div>
+            <div className="bg-slate-50 rounded-2xl p-3 flex justify-between"><span>N2</span><span>+{sources.total.levels.lvl2}</span></div>
+            <div className="bg-slate-50 rounded-2xl p-3 flex justify-between"><span>N3</span><span>+{sources.total.levels.lvl3}</span></div>
+            <div className="bg-slate-50 rounded-2xl p-3 flex justify-between"><span>N4</span><span>+{sources.total.levels.lvl4}</span></div>
+            <div className="bg-slate-50 rounded-2xl p-3 flex justify-between col-span-2"><span>N5</span><span>+{sources.total.levels.lvl5}</span></div>
           </div>
         </div>
       </div>
@@ -175,8 +233,24 @@ const HarvestTreasury = ({ history, onBack }) => {
         <div>
           <h4 className="font-black text-blue-800 text-sm uppercase mb-1">{t('harvest_how_taxes_work')}</h4>
           <p className="text-blue-700 text-xs font-medium leading-relaxed">
-            {t('harvest_how_taxes_work_desc')}
+            {t('harvest_how_taxes_work_desc') || t('minigame_treasury_rules_hint')}
           </p>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-3xl p-4 shadow-sm border border-slate-100 mb-8">
+        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">{t('minigame_treasury_sources') || 'Fontes (PvP)'}</div>
+        <div className="flex justify-between text-xs font-black text-slate-700 py-2 border-b border-slate-100">
+          <span>{t('harvest_treasury_source_harvest') || 'Harvest PvP (Colheita)'}</span>
+          <span>+{sources.harvest.feeTotal}</span>
+        </div>
+        <div className="flex justify-between text-xs font-black text-slate-700 py-2 border-b border-slate-100">
+          <span>{t('minigame_treasury_source_doors') || 'Pega-Galinha PvP (12 portas)'}</span>
+          <span>+{sources.chase.feeTotal}</span>
+        </div>
+        <div className="flex justify-between text-xs font-black text-slate-700 py-2">
+          <span>{t('minigame_treasury_source_cockfight') || 'Cockfight (Rinha)'}</span>
+          <span>+{sources.cockfight.feeTotal}</span>
         </div>
       </div>
 

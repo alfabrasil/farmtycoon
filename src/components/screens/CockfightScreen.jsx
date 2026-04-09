@@ -9,6 +9,7 @@ import InteractiveBattle from './rinha/InteractiveBattle';
 import RoosterSprite from './rinha/RoosterSprite';
 import RoosterCycler from '../ui/RoosterCycler';
 import ChiIcon from '../ui/ChiIcon';
+import { appendTreasuryLedgerEntry, computePvPFeeSplit } from '../../utils/treasuryLedger';
 
 const CockfightScreen = ({ onBack, balance, setBalance, showToast }) => {
   const { t } = useLanguage();
@@ -190,6 +191,16 @@ const CockfightScreen = ({ onBack, balance, setBalance, showToast }) => {
       // Setup Initial Match Data for Interactive Battle
       // We deduct the bet immediately
       setBalance(prev => prev - bet);
+      const split = computePvPFeeSplit(bet, 2);
+      appendTreasuryLedgerEntry({
+        type: 'FEE',
+        source: 'COCKFIGHT_PVP',
+        bet,
+        bettors: 2,
+        fee: split.feeTotal,
+        split,
+        meta: { mode: battleMode },
+      });
       
       const elements = Object.keys(RINHA_CONFIG.ELEMENTS);
       const colors = Object.keys(RINHA_CONFIG.COLORS);
