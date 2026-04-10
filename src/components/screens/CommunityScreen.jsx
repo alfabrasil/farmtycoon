@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { X, Share2, Copy, Zap, Target, Gift, Gavel, ShoppingBag, Clock, DollarSign } from 'lucide-react';
+import { X, Share2, Copy, Zap, Target, Gift, Gavel, ShoppingBag, Clock, DollarSign, MessageCircle } from 'lucide-react';
 import { REFERRAL_LEVELS, TYPE_CONFIG } from '../../data/gameConfig';
 import { useLanguage } from '../../contexts/LanguageContext';
 import ChickenVisual from '../game/ChickenVisual';
 import ChiIcon from '../ui/ChiIcon';
+import ForumTab from './community/ForumTab';
 
-const CommunityScreen = ({ onBack, onSimulateReferral, referralHistory, coopProgress, onContributeCoop, onBuyAuction, chickens, onSellAuction, balance, maxCapacity, auctionItems }) => {
+const CommunityScreen = ({ onBack, username, onSimulateReferral, referralHistory, coopProgress, onContributeCoop, onBuyAuction, chickens, onSellAuction, balance, maxCapacity, auctionItems }) => {
   const { t } = useLanguage();
   const [tab, setTab] = useState('AUCTION');
   const [selectedSell, setSelectedSell] = useState(null);
@@ -18,9 +19,19 @@ const CommunityScreen = ({ onBack, onSimulateReferral, referralHistory, coopProg
         <button onClick={()=>setTab('AUCTION')} className={`flex-1 py-2 px-3 rounded-xl font-black text-sm transition-all whitespace-nowrap ${tab==='AUCTION'?'bg-amber-500 text-white shadow-sm':'text-slate-400'}`}>{t('comm_tab_auction')}</button>
         <button onClick={()=>setTab('AFFILIATE')} className={`flex-1 py-2 px-3 rounded-xl font-black text-sm transition-all whitespace-nowrap ${tab==='AFFILIATE'?'bg-blue-500 text-white shadow-sm':'text-slate-400'}`}>{t('comm_tab_affiliate')}</button>
         <button onClick={()=>setTab('COOP')} className={`flex-1 py-2 px-3 rounded-xl font-black text-sm transition-all whitespace-nowrap ${tab==='COOP'?'bg-green-500 text-white shadow-sm':'text-slate-400'}`}>{t('comm_tab_coop')}</button>
+        <button onClick={()=>setTab('FORUM')} className={`flex-1 py-2 px-3 rounded-xl font-black text-sm transition-all whitespace-nowrap ${tab==='FORUM'?'bg-slate-900 text-white shadow-sm':'text-slate-400'}`}>{t('comm_tab_forum')}</button>
       </div>
 
-      {tab === 'AFFILIATE' ? (
+      {tab === 'FORUM' ? (
+        <div className="space-y-6">
+          <div className="bg-gradient-to-br from-slate-800 to-slate-950 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden border-b-8 border-slate-950">
+            <div className="absolute top-0 right-0 p-4 opacity-20"><MessageCircle size={120} /></div>
+            <h2 className="text-lg font-bold mb-1 opacity-90">{t('forum_title') || 'Fórum dos Fazendeiros'}</h2>
+            <p className="text-white/80 text-sm font-bold">{t('forum_subtitle') || 'Converse no geral, mande mensagens e dê likes.'}</p>
+          </div>
+          <ForumTab username={username} />
+        </div>
+      ) : tab === 'AFFILIATE' ? (
         <div className="space-y-6">
           <div className="bg-gradient-to-br from-blue-500 to-blue-700 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden border-b-8 border-blue-900">
              <div className="absolute top-0 right-0 p-4 opacity-20"><Share2 size={120} /></div><h2 className="text-lg font-bold mb-1 opacity-90">{t('comm_invite_link')}</h2><div className="flex gap-2 items-center bg-black/20 p-3 rounded-xl border border-white/20 backdrop-blur-sm mb-4"><code className="flex-1 font-mono text-sm truncate">farmtycoon.app/ref/fazendeiro01</code><button className="p-2 hover:bg-white/20 rounded-lg transition-colors"><Copy size={18} /></button></div>

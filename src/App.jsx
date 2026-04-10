@@ -1087,7 +1087,7 @@ export default function App() {
             ) : view === 'RANKING' ? (
               <RankingScreen onBack={() => setView('COOP')} balance={balance} />
             ) : view === 'COMMUNITY' ? (
-              <CommunityScreen onBack={() => setView('COOP')} onSimulateReferral={handleSimulateReferral} referralHistory={referralHistory} coopProgress={coopProgress} onContributeCoop={handleContributeCoop} onBuyAuction={handleBuyAuction} onSellAuction={handleSellAuction} chickens={chickens} balance={balance} maxCapacity={maxCapacity} auctionItems={auctionItems} />
+              <CommunityScreen onBack={() => setView('COOP')} username={playerUsername} onSimulateReferral={handleSimulateReferral} referralHistory={referralHistory} coopProgress={coopProgress} onContributeCoop={handleContributeCoop} onBuyAuction={handleBuyAuction} onSellAuction={handleSellAuction} chickens={chickens} balance={balance} maxCapacity={maxCapacity} auctionItems={auctionItems} />
             ) : view === 'PROFILE' ? (
               <ProfileScreen onBack={() => setView('COOP')} username={playerUsername} stats={stats} achievements={achievements} level={level} xp={xp} xpToNextLevel={level*100} goldenEggs={goldenEggs} />
             ) : view === 'WHEEL' ? (
