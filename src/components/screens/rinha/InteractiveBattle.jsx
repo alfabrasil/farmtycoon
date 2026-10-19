@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { RINHA_CONFIG } from '../../../data/gameConfig';
 import { playSound } from '../../../utils/audioSystem';
-import { SKILLS, SkillService } from '../../../data/skills';
+import { SKILLS, SkillService, applySkillHealAmount } from '../../../data/skills';
 import { VFX } from '../../../utils/vfx';
 import RoosterSprite from './RoosterSprite';
 import BattleTopBar from './BattleTopBar';
@@ -33,11 +33,7 @@ const InteractiveBattle = ({ matchData, playerTeam, cpuTeam, mode = '1v1', inven
     const EFFECT_HP_BASELINE = 100;
     const elementFxClass = (elKey) => `rinha-fx-${String(elKey || 'fire').toLowerCase()}`;
     const arenaMagicClass = (elKey) => `arena-magic-${String(elKey || 'fire').toLowerCase()}`;
-    const arenaKey = elMap[matchData?.arena?.advantage] || 'fire';
-    const arenaBonus = typeof matchData?.arena?.bonus === 'number' ? matchData.arena.bonus : 0.25;
-    const arenaAdvantage = matchData?.arena?.advantage || 'FOGO';
-    const arenaRootClass = `rinha-arena-${arenaKey}`;
-    const arenaBadgeClass = `rinha-arena-badge-${arenaKey}`;
+    const SPECIAL_CHARGE_NEED = 2;
     
     // State
     const [gameState, setGameState] = useState('INIT'); // INIT, TURN_START, PLAYER_ACTION, CPU_ACTION, ANIMATING, FINISHED
@@ -55,6 +51,16 @@ const InteractiveBattle = ({ matchData, playerTeam, cpuTeam, mode = '1v1', inven
     
     const [floatingTexts, setFloatingTexts] = useState([]);
     const [logs, setLogs] = useState([]);
+    const [liveArena, setLiveArena] = useState(() => matchData?.arena || null);
+    const [arenaPreview, setArenaPreview] = useState(null);
+
+    const battleArena = arenaPreview || liveArena || matchData?.arena;
+    const arenaKey = elMap[battleArena?.advantage] || 'fire';
+    const arenaBonus = typeof battleArena?.bonus === 'number' ? battleArena.bonus : 0.25;
+    const arenaAdvantage = battleArena?.advantage || 'FOGO';
+    const arenaRootClass = `rinha-arena-${arenaKey}`;
+    const arenaBadgeClass = `rinha-arena-badge-${arenaKey}`;
+    const arenaRef = useRef(matchData?.arena || null);
     
     const pRefs = useRef([]);
     const cRefs = useRef([]);
@@ -81,8 +87,129 @@ const InteractiveBattle = ({ matchData, playerTeam, cpuTeam, mode = '1v1', inven
             'arena-magic-earth',
             'arena-magic-air',
             'anim-winner-l',
-            'anim-winner-r'
+            'anim-winner-r',
+            'anim-special-stomp',
+            'anim-special-spin',
+            'anim-special-dive',
+            'anim-special-burn'
         );
+    };
+
+    const strikeStyleFor = (skill, elKey, actionType) => {
+        if (actionType === 'ultimate') return 'ultimate';
+        if (skill?.style) return skill.style;
+        if (elKey === 'water') return 'wave';
+        if (elKey === 'earth') return 'brace';
+        if (elKey === 'air') return 'dive';
+        return 'comet';
+    };
+
+    const isSelfCast = (skill) => {
+        if (!skill) return false;
+        if (skill.id === 'w-ability' || skill.id === 'w-arena') return false;
+        if (skill.type === 'buff') return true;
+        if (skill.effect === 'heal' && skill.type !== 'ultimate') return true;
+        return false;
+    };
+
+    const resolveHeal = (caster, foe, skill, dmgInfo, casterSide, foeSide, foeNode) => {
+        const casterIdx = casterSide === 'p' ? activePIdx : activeCIdx;
+        const foeIdx = foeSide === 'p' ? activePIdx : activeCIdx;
+        const heal = skill.id === 'w-arena'
+            ? applySkillHealAmount(skill, caster.hpMax, caster)
+            : Math.round(EFFECT_HP_BASELINE * ((skill.value || 0) / 100) * ((battleArena?.advantage === caster.element) ? (1 + arenaBonus) : 1));
+        const before = caster.hp;
+        caster.hp = Math.min(caster.hpMax, caster.hp + heal);
+        const gained = caster.hp - before;
+        if (gained > 0) addFloatingText(casterSide, casterIdx, `+${gained}`, false, true);
+
+        const strikes = skill.id === 'w-arena' || skill.id === 'w-ability' || (caster.elKey === 'water' && skill.type === 'ultimate');
+        if (!strikes) return;
+        const total = Math.max(0, dmgInfo?.value || 0);
+        if (total > 0) {
+            foe.hp = Math.max(0, foe.hp - total);
+            addFloatingText(foeSide, foeIdx, `-${total}`, dmgInfo.type === 'critical', false);
+            if (foe.hp <= 0) playSound('defeat');
+            if (foeNode) {
+                foeNode.classList.add('anim-hit');
+                setTimeout(() => foeNode && foeNode.classList.remove('anim-hit'), 350);
+            }
+        } else if (dmgInfo?.type === 'dodge') {
+            addFloatingText(foeSide, foeIdx, 'DODGE', false, false);
+        }
+    };
+
+    const flashHit = (node) => {
+        if (!node) return;
+        node.classList.remove('anim-hit');
+        void node.offsetWidth;
+        node.classList.add('anim-hit');
+        setTimeout(() => node.classList.remove('anim-hit'), 350);
+    };
+
+    const playElementSpecial = async (attacker, target, trail, selfCast) => {
+        if (!attacker) {
+            await sleep(400);
+            return;
+        }
+        const pose = {
+            earth: 'anim-special-stomp',
+            air: 'anim-special-spin',
+            water: 'anim-special-dive',
+            fire: 'anim-special-burn'
+        }[trail] || 'anim-special-burn';
+        attacker.classList.add(pose, 'arena-magic-cast', arenaMagicClass(trail));
+        if (showFx) {
+            VFX.play(trail, attacker);
+            if (trail === 'earth') VFX.shakeStage('impact', 'rinha-battle-stage');
+        }
+        const impactAt = trail === 'earth' ? 380 : trail === 'water' ? 460 : 320;
+        await sleep(impactAt);
+        if (!selfCast && target) {
+            if (showFx) VFX.play(trail, target);
+            flashHit(target);
+            playSound('punch');
+        }
+        await sleep(trail === 'air' ? 420 : 320);
+        attacker.classList.remove(pose, 'arena-magic-cast', arenaMagicClass(trail));
+    };
+
+    const playDuelCharge = async ({ attacker, target, style, trail, lungeClass, ultimate, selfCast, basic }) => {
+        const isSpecial = ultimate || style === 'ultimate';
+        if (isSpecial) {
+            await playElementSpecial(attacker, target, trail || 'fire', selfCast);
+            return;
+        }
+        const useCharge = Boolean(attacker && target);
+        if (!useCharge) {
+            if (attacker) {
+                attacker.classList.add(lungeClass, 'anim-wing-flap');
+                if (ultimate) attacker.classList.add('arena-magic-cast', arenaMagicClass(trail));
+            }
+            if (target && !selfCast) target.classList.add('target-rooster');
+            if (showFx && ultimate) VFX.playUltimate(trail, attacker, selfCast ? attacker : target);
+            else if (showFx && !basic) {
+                const vfxTarget = selfCast ? attacker : target;
+                if (vfxTarget) VFX.play(trail, vfxTarget);
+            }
+            await sleep(400);
+            return;
+        }
+
+        attacker.classList.add('anim-wing-flap');
+        if (!selfCast) target.classList.add('target-rooster');
+        await VFX.chargeStrike(attacker, target, style || 'peck', {
+            trail: trail || 'fire',
+            fx: showFx,
+            stageId: 'rinha-battle-stage',
+            onImpact: () => {
+                if (showFx && ultimate) VFX.playUltimate(trail, attacker, target);
+                else if (showFx && !basic) VFX.play(trail, selfCast ? attacker : target);
+                if (!selfCast) flashHit(target);
+                playSound('punch');
+            }
+        });
+        attacker.classList.remove('anim-wing-flap');
     };
 
     // Initialize Teams
@@ -94,7 +221,9 @@ const InteractiveBattle = ({ matchData, playerTeam, cpuTeam, mode = '1v1', inven
             const elementBase = ELEMENT_BASE_STRENGTH[r.element] || 100;
             const hpMultiplier = elementBase / 100; // Fire=1.0, Earth=0.95, Water=0.90, Air=0.85
             const baseHpCalculated = BASE_HP * hpMultiplier;
-            const hp = Math.round(baseHpCalculated * (1 + hpArenaBonus));
+            const level = Math.max(1, Number(r.level) || 1);
+            const levelScale = (100 + level * 10) / 110;
+            const hp = Math.round(baseHpCalculated * (1 + hpArenaBonus) * levelScale);
             return {
                 ...r,
                 hpMax: hp,
@@ -102,7 +231,7 @@ const InteractiveBattle = ({ matchData, playerTeam, cpuTeam, mode = '1v1', inven
                 energy: 100,
                 energyMax: 100,
                 cooldowns: {},
-                status: { shield: 1, shieldTurns: 0, def: 1, defTurns: 0, dodgeChance: 0, dodgeTurns: 0, dmgBoost: 1, dmgBoostTurns: 0, burnTurns: 0, burnDmg: 0, stun: false, ultUsed: false, airDoubleNext: 0 },
+                status: { shield: 1, shieldTurns: 0, def: 1, defTurns: 0, dodgeChance: 0, dodgeTurns: 0, dmgBoost: 1, dmgBoostTurns: 0, burnTurns: 0, burnDmg: 0, stun: false, ultUsed: false, airDoubleNext: 0, specialCharge: mode === '3v3' ? SPECIAL_CHARGE_NEED : 0 },
                 elKey: elMap[r.element] || 'fire'
             };
         });
@@ -129,8 +258,16 @@ const InteractiveBattle = ({ matchData, playerTeam, cpuTeam, mode = '1v1', inven
         setShowSkills(Boolean(initialState.showSkills));
         setShowItems(Boolean(initialState.showItems));
         setLogs(Array.isArray(initialState.logs) ? initialState.logs : []);
+        if (initialState.liveArena) {
+            setLiveArena(initialState.liveArena);
+            arenaRef.current = initialState.liveArena;
+        }
         setGameState(initialState.gameState || 'TURN_START');
     }, [initialState]);
+
+    useEffect(() => {
+        arenaRef.current = liveArena || matchData?.arena || null;
+    }, [liveArena, matchData?.arena]);
 
     useEffect(() => {
         if (!onStateChange) return;
@@ -148,11 +285,12 @@ const InteractiveBattle = ({ matchData, playerTeam, cpuTeam, mode = '1v1', inven
                 showFx,
                 showSkills,
                 showItems,
-                logs
+                logs,
+                liveArena
             });
         }, 250);
         return () => clearTimeout(stateSyncTimeoutRef.current);
-    }, [onStateChange, gameState, pTeam, cTeam, activePIdx, activeCIdx, turnTimer, isAuto, showFx, showSkills, showItems, logs]);
+    }, [onStateChange, gameState, pTeam, cTeam, activePIdx, activeCIdx, turnTimer, isAuto, showFx, showSkills, showItems, logs, liveArena]);
 
     useEffect(() => {
         if (gameState === 'PLAYER_ACTION') {
@@ -214,7 +352,7 @@ const InteractiveBattle = ({ matchData, playerTeam, cpuTeam, mode = '1v1', inven
         // Defense/Shield
         dmg = dmg * defender.status.shield * (1 / defender.status.def) * 0.15; // 0.15 scaling factor
 
-        if (matchData?.arena?.advantage === 'TERRA' && defender.element === 'TERRA') {
+        if (battleArena?.advantage === 'TERRA' && defender.element === 'TERRA') {
             dmg *= 0.85;
         }
         
@@ -251,7 +389,7 @@ const InteractiveBattle = ({ matchData, playerTeam, cpuTeam, mode = '1v1', inven
             }
         }
 
-        if (matchData?.arena?.advantage === 'AGUA' && r.element === 'AGUA') {
+        if (battleArena?.advantage === 'AGUA' && r.element === 'AGUA') {
             const heal = Math.max(1, Math.round(EFFECT_HP_BASELINE * 0.05));
             const before = r.hp;
             r.hp = Math.min(r.hpMax, r.hp + heal);
@@ -286,6 +424,7 @@ const InteractiveBattle = ({ matchData, playerTeam, cpuTeam, mode = '1v1', inven
         let newCTeam = [...cTeamNow];
         let pGal = newPTeam[activePIdx];
         let cGal = newCTeam[activeCIdx];
+        let spentArenaSpecial = false;
         
         if (actionType === 'ultimate') {
             pGal.status.ultUsed = true;
@@ -296,14 +435,16 @@ const InteractiveBattle = ({ matchData, playerTeam, cpuTeam, mode = '1v1', inven
             
             clearBattleClasses(pNode);
             clearBattleClasses(cNode);
-            
-            if (pNode) pNode.classList.add('anim-lunge-up', 'anim-wing-flap', 'arena-magic-cast', arenaMagicClass(pGal.elKey));
-            if (cNode) cNode.classList.add('target-rooster');
-            
+
             playSound(`ult_${pGal.elKey}`);
-            if (showFx) VFX.playUltimate(pGal.elKey, pNode, cNode);
-            
-            await sleep(400);
+            await playDuelCharge({
+                attacker: pNode,
+                target: cNode,
+                style: 'ultimate',
+                trail: pGal.elKey,
+                lungeClass: 'anim-lunge-up',
+                ultimate: true
+            });
             
             let multiplier = pGal.elKey === 'fire' ? 2.5 : 1.5;
             
@@ -321,7 +462,7 @@ const InteractiveBattle = ({ matchData, playerTeam, cpuTeam, mode = '1v1', inven
                 cGal.status.dodgeChance = 0;
             }
             
-            const isArenaMatch = matchData.arena.advantage === pGal.element;
+            const isArenaMatch = battleArena.advantage === pGal.element;
             const dmgInfo = calculateDamage(pGal, cGal, { multiplier }, isArenaMatch);
             
             if (pGal.elKey === 'earth') {
@@ -360,6 +501,22 @@ const InteractiveBattle = ({ matchData, playerTeam, cpuTeam, mode = '1v1', inven
             
         } else if (actionType === 'skill') {
             const skill = SKILLS[pGal.elKey].find(s => s.id === id);
+            if (!skill) {
+                actionLockRef.current = false;
+                setGameState('PLAYER_ACTION');
+                return;
+            }
+            spentArenaSpecial = mode === '3v3' && String(skill.id).endsWith('-arena');
+            if (spentArenaSpecial) {
+                const charge = pGal.status?.specialCharge ?? 0;
+                const arenaOk = (arenaRef.current?.advantage || arenaAdvantage) === pGal.element;
+                if (!arenaOk || charge < SPECIAL_CHARGE_NEED) {
+                    addFloatingText('p', activePIdx, !arenaOk ? 'FORA DA ARENA' : `${SPECIAL_CHARGE_NEED - charge} RODADAS`, false, false);
+                    actionLockRef.current = false;
+                    setGameState('PLAYER_ACTION');
+                    return;
+                }
+            }
             pGal.energy -= skill.cost;
             if (skill.cooldown) pGal.cooldowns[skill.id] = skill.cooldown;
             const baseSkillId = SKILLS[pGal.elKey]?.[0]?.id;
@@ -372,51 +529,23 @@ const InteractiveBattle = ({ matchData, playerTeam, cpuTeam, mode = '1v1', inven
             clearBattleClasses(pNode);
             clearBattleClasses(cNode);
             
-            if (pNode) pNode.classList.add('anim-lunge-up', 'anim-wing-flap');
-            if (cNode) cNode.classList.add('target-rooster');
             playSound(isBasicSkill ? 'punch' : pGal.elKey);
-            
-            const isArenaMatch = matchData.arena.advantage === pGal.element;
+            const isArenaMatch = battleArena.advantage === pGal.element;
             const dmgInfo = calculateDamage(pGal, cGal, skill, isArenaMatch);
-            
-            if (skill.type === 'ultimate') {
-                const vfxTarget = (skill.effect === 'heal' || skill.type === 'buff') ? pNode : cNode;
-                if (pNode) pNode.classList.add('arena-magic-cast', arenaMagicClass(pGal.elKey));
-                if (showFx && !isBasicSkill && vfxTarget) VFX.play(pGal.elKey, vfxTarget);
-            }
-            else {
-                const vfxTarget = (skill.effect === 'heal' || skill.type === 'buff') ? pNode : cNode;
-                if (showFx && !isBasicSkill && vfxTarget) VFX.play(pGal.elKey, vfxTarget);
-            }
-            
-            await sleep(400);
+
+            await playDuelCharge({
+                attacker: pNode,
+                target: cNode,
+                style: strikeStyleFor(skill, pGal.elKey, actionType),
+                trail: pGal.elKey,
+                lungeClass: 'anim-lunge-up',
+                ultimate: skill.type === 'ultimate',
+                selfCast: isSelfCast(skill),
+                basic: isBasicSkill
+            });
             
             if (skill.effect === 'heal') {
-                const heal = Math.round(EFFECT_HP_BASELINE * (skill.value / 100) * (isArenaMatch ? (1 + arenaBonus) : 1));
-                pGal.hp = Math.min(pGal.hpMax, pGal.hp + heal);
-                addFloatingText('p', activePIdx, `+${heal}`, false, true);
-
-                if (pGal.elKey === 'water' && skill.type === 'ultimate') {
-                    const total = Math.max(0, dmgInfo.value);
-                    if (total > 0) {
-                        cGal.hp = Math.max(0, cGal.hp - total);
-                        addFloatingText('c', activeCIdx, `-${total}`, dmgInfo.type === 'critical', false);
-                        if (cNode) cNode.classList.add('anim-hit');
-                        setTimeout(() => cNode && cNode.classList.remove('anim-hit'), 350);
-                    } else if (dmgInfo.type === 'dodge') {
-                        addFloatingText('c', activeCIdx, 'DODGE', false, false);
-                    }
-                } else if (pGal.elKey === 'water' && skill.id === 'w-ability') {
-                    const total = Math.max(0, dmgInfo.value);
-                    if (total > 0) {
-                        cGal.hp = Math.max(0, cGal.hp - total);
-                        addFloatingText('c', activeCIdx, `-${total}`, dmgInfo.type === 'critical', false);
-                        if (cNode) cNode.classList.add('anim-hit');
-                        setTimeout(() => cNode && cNode.classList.remove('anim-hit'), 350);
-                    } else if (dmgInfo.type === 'dodge') {
-                        addFloatingText('c', activeCIdx, 'DODGE', false, false);
-                    }
-                }
+                resolveHeal(pGal, cGal, skill, dmgInfo, 'p', 'c', cNode);
             } else if (skill.type === 'buff' && (skill.effect === 'shield' || skill.effect === 'def' || skill.effect === 'dodge' || skill.effect === 'airDoubleNext')) {
                 if (skill.effect === 'shield') {
                     pGal.status.shield = skill.value;
@@ -445,7 +574,18 @@ const InteractiveBattle = ({ matchData, playerTeam, cpuTeam, mode = '1v1', inven
                     if (isBasicSkill && pGal.elKey === 'air' && (pGal.status?.airDoubleNext || 0) > 0) {
                         pGal.status.airDoubleNext = 0;
                         if (cGal.hp > 0) {
-                            await sleep(180);
+                            if (mode === '1v1') {
+                                await playDuelCharge({
+                                    attacker: pNode,
+                                    target: cNode,
+                                    style: 'dive',
+                                    trail: 'air',
+                                    lungeClass: 'anim-lunge-up',
+                                    basic: true
+                                });
+                            } else {
+                                await sleep(180);
+                            }
                             cGal.hp = Math.max(0, cGal.hp - total);
                             addFloatingText('c', activeCIdx, `-${total}`, false, false);
                             if (cNode) cNode.classList.add('anim-hit');
@@ -479,7 +619,7 @@ const InteractiveBattle = ({ matchData, playerTeam, cpuTeam, mode = '1v1', inven
                 pGal.status.defTurns = skill.duration || 1;
             }
 
-            if (matchData?.arena?.advantage === 'FOGO' && pGal.element === 'FOGO' && skill.effect !== 'heal') {
+            if (battleArena?.advantage === 'FOGO' && pGal.element === 'FOGO' && skill.effect !== 'heal') {
                 cGal.status.burnTurns = 2;
                 cGal.status.burnDmg = Math.max(1, Math.round(EFFECT_HP_BASELINE * 0.08));
             }
@@ -530,6 +670,13 @@ const InteractiveBattle = ({ matchData, playerTeam, cpuTeam, mode = '1v1', inven
             }
             await sleep(500);
         }
+
+        if (mode === '3v3') {
+            pGal.status = pGal.status || {};
+            pGal.status.specialCharge = spentArenaSpecial
+                ? 0
+                : Math.min(SPECIAL_CHARGE_NEED, (pGal.status.specialCharge || 0) + 1);
+        }
         
         setPTeam(newPTeam);
         setCTeam(newCTeam);
@@ -552,15 +699,18 @@ const InteractiveBattle = ({ matchData, playerTeam, cpuTeam, mode = '1v1', inven
         let newCTeam = [...cTeamNow];
         let pGal = newPTeam[activePIdx];
         let cGal = newCTeam[activeCIdx];
+        let spentArenaSpecial = false;
+        let cpuActed = false;
         
         if (cGal.status.stun) {
             addFloatingText('c', activeCIdx, t('cockfight_stunned'), false, false);
             cGal.status.stun = false;
             await sleep(1000);
         } else {
-            const isUltReady = cGal.hp <= (cGal.hpMax * 0.3) && !cGal.status.ultUsed;
+            const isUltReady = mode !== '3v3' && cGal.hp <= (cGal.hpMax * 0.3) && !cGal.status.ultUsed;
 
             if (isUltReady) {
+                cpuActed = true;
                 cGal.status.ultUsed = true;
                 const skillNameKey = `cockfight_ult_${cGal.elKey}_name`;
                 
@@ -570,13 +720,15 @@ const InteractiveBattle = ({ matchData, playerTeam, cpuTeam, mode = '1v1', inven
                 clearBattleClasses(pNode);
                 clearBattleClasses(cNode);
                 
-                if (cNode) cNode.classList.add('anim-lunge-down', 'anim-wing-flap', 'arena-magic-cast', arenaMagicClass(cGal.elKey));
-                if (pNode) pNode.classList.add('target-rooster');
                 playSound(`ult_${cGal.elKey}`);
-                
-                if (showFx) VFX.playUltimate(cGal.elKey, cNode, pNode);
-                
-                await sleep(400);
+                await playDuelCharge({
+                    attacker: cNode,
+                    target: pNode,
+                    style: 'ultimate',
+                    trail: cGal.elKey,
+                    lungeClass: 'anim-lunge-down',
+                    ultimate: true
+                });
                 
                 let multiplier = cGal.elKey === 'fire' ? 2.5 : 1.5;
                 
@@ -594,7 +746,7 @@ const InteractiveBattle = ({ matchData, playerTeam, cpuTeam, mode = '1v1', inven
                     pGal.status.dodgeChance = 0;
                 }
                 
-                const isArenaMatch = matchData.arena.advantage === cGal.element;
+                const isArenaMatch = battleArena.advantage === cGal.element;
                 const dmgInfo = calculateDamage(cGal, pGal, { multiplier }, isArenaMatch);
                 
                 if (cGal.elKey === 'earth') {
@@ -636,10 +788,23 @@ const InteractiveBattle = ({ matchData, playerTeam, cpuTeam, mode = '1v1', inven
                 if (pNode) pNode.classList.remove('target-rooster');
                 
             } else {
-                const arenaKey = elMap[matchData.arena.advantage];
-                const skills = SkillService.getSkillsForRooster(cGal.elKey, cGal.level || 1, arenaKey);
+                const arenaNow = arenaRef.current || battleArena;
+                const rosterKey = elMap[arenaNow?.advantage];
+                const arenaSpecial = (SKILLS[cGal.elKey] || []).find(s => String(s.id).endsWith('-arena'));
+                const chargeReady = (cGal.status?.specialCharge ?? 0) >= SPECIAL_CHARGE_NEED;
+                const arenaOk = arenaNow?.advantage === cGal.element;
+                const specialAffordable = arenaSpecial && (arenaSpecial.cost || 0) <= cGal.energy && !(cGal.cooldowns?.[arenaSpecial.id] > 0);
+                const preferSpecial = mode === '3v3' && arenaOk && chargeReady && specialAffordable && (
+                    cGal.elKey === 'water'
+                        ? (cGal.hp / cGal.hpMax < 0.7 || Math.random() < 0.4)
+                        : Math.random() < 0.9
+                );
+                const skills = SkillService.getSkillsForRooster(cGal.elKey, cGal.level || 1, rosterKey)
+                    .filter(s => mode !== '3v3' || !String(s.id).endsWith('-arena'));
                 const affordable = skills.filter(s => s.cost <= cGal.energy && !(cGal.cooldowns[s.id] > 0));
-                const skill = affordable.length > 0 ? affordable[Math.floor(Math.random() * affordable.length)] : skills[0];
+                const skill = preferSpecial ? arenaSpecial : (affordable.length > 0 ? affordable[Math.floor(Math.random() * affordable.length)] : skills[0]);
+                spentArenaSpecial = Boolean(preferSpecial);
+                cpuActed = true;
                 
                 cGal.energy -= skill.cost;
                 if (skill.cooldown) cGal.cooldowns[skill.id] = skill.cooldown;
@@ -650,53 +815,26 @@ const InteractiveBattle = ({ matchData, playerTeam, cpuTeam, mode = '1v1', inven
                 clearBattleClasses(pNode);
                 clearBattleClasses(cNode);
                 
-                if (cNode) cNode.classList.add('anim-lunge-down', 'anim-wing-flap');
-                if (pNode) pNode.classList.add('target-rooster');
                 const baseSkillId = SKILLS[cGal.elKey]?.[0]?.id;
                 const isBasicSkill = skill.id === baseSkillId;
                 playSound(isBasicSkill ? 'punch' : cGal.elKey);
-                
-                const isArenaMatch = matchData.arena.advantage === cGal.element;
+
+                const isArenaMatch = battleArena.advantage === cGal.element;
                 const dmgInfo = calculateDamage(cGal, pGal, skill, isArenaMatch);
-                
-                if (skill.type === 'ultimate') {
-                    const vfxTarget = (skill.effect === 'heal' || skill.type === 'buff') ? cNode : pNode;
-                    if (cNode) cNode.classList.add('arena-magic-cast', arenaMagicClass(cGal.elKey));
-                    if (showFx && !isBasicSkill && vfxTarget) VFX.play(cGal.elKey, vfxTarget);
-                }
-                else {
-                    const vfxTarget = (skill.effect === 'heal' || skill.type === 'buff') ? cNode : pNode;
-                    if (showFx && !isBasicSkill && vfxTarget) VFX.play(cGal.elKey, vfxTarget);
-                }
-                
-                await sleep(400);
+
+                await playDuelCharge({
+                    attacker: cNode,
+                    target: pNode,
+                    style: strikeStyleFor(skill, cGal.elKey),
+                    trail: cGal.elKey,
+                    lungeClass: 'anim-lunge-down',
+                    ultimate: skill.type === 'ultimate',
+                    selfCast: isSelfCast(skill),
+                    basic: isBasicSkill
+                });
                 
                 if (skill.effect === 'heal') {
-                    const heal = Math.round(EFFECT_HP_BASELINE * (skill.value / 100) * (isArenaMatch ? (1 + arenaBonus) : 1));
-                    cGal.hp = Math.min(cGal.hpMax, cGal.hp + heal);
-                    addFloatingText('c', activeCIdx, `+${heal}`, false, true);
-
-                    if (cGal.elKey === 'water' && skill.type === 'ultimate') {
-                        const total = Math.max(0, dmgInfo.value);
-                        if (total > 0) {
-                            pGal.hp = Math.max(0, pGal.hp - total);
-                            addFloatingText('p', activePIdx, `-${total}`, dmgInfo.type === 'critical', false);
-                            if (pNode) pNode.classList.add('anim-hit');
-                            setTimeout(() => pNode && pNode.classList.remove('anim-hit'), 350);
-                        } else if (dmgInfo.type === 'dodge') {
-                            addFloatingText('p', activePIdx, 'DODGE', false, false);
-                        }
-                    } else if (cGal.elKey === 'water' && skill.id === 'w-ability') {
-                        const total = Math.max(0, dmgInfo.value);
-                        if (total > 0) {
-                            pGal.hp = Math.max(0, pGal.hp - total);
-                            addFloatingText('p', activePIdx, `-${total}`, dmgInfo.type === 'critical', false);
-                            if (pNode) pNode.classList.add('anim-hit');
-                            setTimeout(() => pNode && pNode.classList.remove('anim-hit'), 350);
-                        } else if (dmgInfo.type === 'dodge') {
-                            addFloatingText('p', activePIdx, 'DODGE', false, false);
-                        }
-                    }
+                    resolveHeal(cGal, pGal, skill, dmgInfo, 'c', 'p', pNode);
                 } else if (skill.type === 'buff' && (skill.effect === 'shield' || skill.effect === 'def' || skill.effect === 'dodge' || skill.effect === 'airDoubleNext')) {
                     if (skill.effect === 'shield') {
                         cGal.status.shield = skill.value;
@@ -725,7 +863,18 @@ const InteractiveBattle = ({ matchData, playerTeam, cpuTeam, mode = '1v1', inven
                         if (isBasicSkill && cGal.elKey === 'air' && (cGal.status?.airDoubleNext || 0) > 0) {
                             cGal.status.airDoubleNext = 0;
                             if (pGal.hp > 0) {
-                                await sleep(180);
+                                if (mode === '1v1') {
+                                    await playDuelCharge({
+                                        attacker: cNode,
+                                        target: pNode,
+                                        style: 'dive',
+                                        trail: 'air',
+                                        lungeClass: 'anim-lunge-down',
+                                        basic: true
+                                    });
+                                } else {
+                                    await sleep(180);
+                                }
                                 pGal.hp = Math.max(0, pGal.hp - total);
                                 addFloatingText('p', activePIdx, `-${total}`, false, false);
                                 if (pNode) pNode.classList.add('anim-hit');
@@ -760,7 +909,7 @@ const InteractiveBattle = ({ matchData, playerTeam, cpuTeam, mode = '1v1', inven
             
             addLog(`CPU used ${t(skill.nameKey)}`);
 
-            if (matchData?.arena?.advantage === 'FOGO' && cGal.element === 'FOGO' && skill.effect !== 'heal') {
+            if (battleArena?.advantage === 'FOGO' && cGal.element === 'FOGO' && skill.effect !== 'heal') {
                 pGal.status.burnTurns = 2;
                 pGal.status.burnDmg = Math.max(1, Math.round(EFFECT_HP_BASELINE * 0.08));
             }
@@ -771,6 +920,13 @@ const InteractiveBattle = ({ matchData, playerTeam, cpuTeam, mode = '1v1', inven
                 if (cNode) cNode.classList.remove('anim-lunge-down', 'anim-wing-flap', 'arena-magic-cast', arenaMagicClass(cGal.elKey));
                 if (pNode) pNode.classList.remove('target-rooster');
             }
+        }
+
+        if (mode === '3v3' && cpuActed) {
+            cGal.status = cGal.status || {};
+            cGal.status.specialCharge = spentArenaSpecial
+                ? 0
+                : Math.min(SPECIAL_CHARGE_NEED, (cGal.status.specialCharge || 0) + 1);
         }
         
         setPTeam(newPTeam);
@@ -812,7 +968,7 @@ const InteractiveBattle = ({ matchData, playerTeam, cpuTeam, mode = '1v1', inven
         }
     };
 
-    const advanceTurn = (currentPTeam, currentCTeam) => {
+    const advanceTurn = async (currentPTeam, currentCTeam) => {
         // Regen Energy & Cooldowns
         let newPTeam = [...currentPTeam];
         let newCTeam = [...currentCTeam];
@@ -865,8 +1021,39 @@ const InteractiveBattle = ({ matchData, playerTeam, cpuTeam, mode = '1v1', inven
         
         setPTeam(newPTeam);
         setCTeam(newCTeam);
+        if (newPTeam.some(r => r.hp > 0) && newCTeam.some(r => r.hp > 0)) {
+            setGameState('ANIMATING');
+            await rollNextArena();
+        }
         setGameState('TURN_START');
     };
+
+    const rollNextArena = () => new Promise((resolve) => {
+        const arenas = RINHA_CONFIG.ARENAS || [];
+        if (arenas.length < 2) {
+            resolve();
+            return;
+        }
+        const currentId = arenaRef.current?.id;
+        const pool = arenas.filter(a => a.id !== currentId);
+        const next = pool[Math.floor(Math.random() * pool.length)] || arenas[0];
+        let step = 0;
+        const timer = setInterval(() => {
+            setArenaPreview(arenas[Math.floor(Math.random() * arenas.length)]);
+            step += 1;
+            if (step >= 8) {
+                clearInterval(timer);
+                arenaRef.current = next;
+                setLiveArena(next);
+                setArenaPreview(next);
+                addLog(`${next.icon || ''} ${t(next.nameKey) || next.name}`);
+                setTimeout(() => {
+                    setArenaPreview(null);
+                    resolve();
+                }, 700);
+            }
+        }, 90);
+    });
 
     useEffect(() => {
         if (gameState === 'TURN_START') {
@@ -881,16 +1068,28 @@ const InteractiveBattle = ({ matchData, playerTeam, cpuTeam, mode = '1v1', inven
 
     useEffect(() => {
         if (gameState === 'PLAYER_ACTION') {
-            const arenaKey = elMap[matchData.arena.advantage];
+            const arenaNowKey = elMap[battleArena?.advantage];
+            const actor = pTeam[activePIdx];
+            const arenaSkill = (SKILLS[actor?.elKey] || []).find(s => String(s.id).endsWith('-arena'));
+            const specialReady = mode === '3v3'
+                ? Boolean(
+                    actor && arenaSkill && actor.element === battleArena?.advantage &&
+                    (actor.status?.specialCharge ?? 0) >= SPECIAL_CHARGE_NEED &&
+                    actor.energy >= (arenaSkill.cost || 0) &&
+                    !(actor.cooldowns?.[arenaSkill.id] > 0)
+                )
+                : Boolean(actor && actor.hp <= (actor.hpMax * 0.3) && !actor.status?.ultUsed);
             if (isAuto) {
-                const isUltReady = pTeam[activePIdx].hp <= (pTeam[activePIdx].hpMax * 0.3) && !pTeam[activePIdx].status.ultUsed;
-                
                 clearTimeout(autoTimeoutRef.current);
-                if (isUltReady) {
-                    autoTimeoutRef.current = setTimeout(() => processAction('ultimate'), 1000);
+                if (specialReady) {
+                    autoTimeoutRef.current = setTimeout(() => {
+                        if (mode === '3v3') processAction('skill', arenaSkill.id);
+                        else processAction('ultimate');
+                    }, 1000);
                 } else {
-                    const skills = SkillService.getSkillsForRooster(pTeam[activePIdx].elKey, pTeam[activePIdx].level || 1, arenaKey);
-                    const affordable = skills.filter(s => s.cost <= pTeam[activePIdx].energy && !(pTeam[activePIdx].cooldowns[s.id] > 0));
+                    const skills = SkillService.getSkillsForRooster(actor.elKey, actor.level || 1, arenaNowKey)
+                        .filter(s => mode !== '3v3' || !String(s.id).endsWith('-arena'));
+                    const affordable = skills.filter(s => s.cost <= actor.energy && !(actor.cooldowns[s.id] > 0));
                     const skill = affordable.length > 0 ? affordable[Math.floor(Math.random() * affordable.length)] : skills[0];
                     autoTimeoutRef.current = setTimeout(() => processAction('skill', skill.id), 1000);
                 }
@@ -899,12 +1098,12 @@ const InteractiveBattle = ({ matchData, playerTeam, cpuTeam, mode = '1v1', inven
                     setTurnTimer(prev => {
                         if (prev <= 1) {
                             clearInterval(timerRef.current);
-                            const isUltReady = pTeam[activePIdx].hp <= (pTeam[activePIdx].hpMax * 0.3) && !pTeam[activePIdx].status.ultUsed;
-                            
-                            if (isUltReady) {
-                                processAction('ultimate');
+                            if (specialReady) {
+                                if (mode === '3v3') processAction('skill', arenaSkill.id);
+                                else processAction('ultimate');
                             } else {
-                                const skills = SkillService.getSkillsForRooster(pTeam[activePIdx].elKey, pTeam[activePIdx].level || 1, arenaKey);
+                                const skills = SkillService.getSkillsForRooster(actor.elKey, actor.level || 1, arenaNowKey)
+                                    .filter(s => mode !== '3v3' || !String(s.id).endsWith('-arena'));
                                 processAction('skill', skills[0].id);
                             }
                             return 0;
@@ -949,6 +1148,14 @@ const InteractiveBattle = ({ matchData, playerTeam, cpuTeam, mode = '1v1', inven
         if (r.status.defTurns > 0) badges.push({ label: `🛡️ DEF ${r.status.defTurns}T`, cls: 'bg-amber-400 text-black' });
         if (r.status.dodgeTurns > 0) badges.push({ label: `💨 DODGE ${r.status.dodgeTurns}T`, cls: 'bg-indigo-500 text-white' });
         if (r.status.airDoubleNext > 0) badges.push({ label: `⚡ 2X NEXT`, cls: 'bg-cyan-500 text-slate-900' });
+        if (mode === '3v3') {
+            const charge = r.status.specialCharge ?? 0;
+            const onArena = r.element === arenaAdvantage;
+            badges.push({
+                label: onArena && charge >= SPECIAL_CHARGE_NEED ? 'ESP PRONTO' : `ESP ${charge}/${SPECIAL_CHARGE_NEED}`,
+                cls: onArena && charge >= SPECIAL_CHARGE_NEED ? 'bg-yellow-400 text-black' : 'bg-slate-600 text-white'
+            });
+        }
         if (badges.length === 0) return null;
         return (
             <div className="flex gap-1 mb-1">
@@ -962,7 +1169,7 @@ const InteractiveBattle = ({ matchData, playerTeam, cpuTeam, mode = '1v1', inven
     const getPlayerSkillList = () => {
         const p = pTeam[activePIdx];
         if (!p) return [];
-        const arenaKey = elMap[matchData?.arena?.advantage];
+        const arenaKey = elMap[battleArena?.advantage];
         return SkillService.getSkillsForRooster(p.elKey, p.level || 1, arenaKey);
     };
 
@@ -1005,10 +1212,20 @@ const InteractiveBattle = ({ matchData, playerTeam, cpuTeam, mode = '1v1', inven
         const abilitySkill = getPrimaryAbilitySkill(skillsAll);
 
         const isHpLow = p.hp <= (p.hpMax * 0.3);
-            const isUltReady = isHpLow && !p.status.ultUsed;
-            const specialHint = isUltReady
+        const arenaSkill = getArenaSpecialSkill();
+        const charge = p.status?.specialCharge ?? 0;
+        const arenaOk = mode === '3v3' && p.element === arenaAdvantage;
+        const chargeReady = charge >= SPECIAL_CHARGE_NEED;
+        const arenaCd = arenaSkill ? (p.cooldowns?.[arenaSkill.id] || 0) : 0;
+        const canPaySpecial = arenaSkill && p.energy >= (arenaSkill.cost || 0) && arenaCd <= 0;
+        const isUltReady = mode === '3v3'
+            ? Boolean(arenaOk && chargeReady && canPaySpecial)
+            : isHpLow && !p.status.ultUsed;
+        const specialHint = mode === '3v3'
+            ? (!arenaOk ? 'Fora da arena' : !chargeReady ? `${SPECIAL_CHARGE_NEED - charge} rodadas` : arenaCd > 0 ? `${arenaCd}T` : 'PRONTO')
+            : (isUltReady
                 ? (t('cockfight_lowhp_special_ready') || 'PRONTO')
-                : (t('cockfight_lowhp_special_requires_hp') || '≤30% HP');
+                : (t('cockfight_lowhp_special_requires_hp') || '≤30% HP'));
 
         const onBase = () => {
             if (baseSkill) processAction('skill', baseSkill.id);
@@ -1025,7 +1242,8 @@ const InteractiveBattle = ({ matchData, playerTeam, cpuTeam, mode = '1v1', inven
 
         const onSpecial = () => {
             if (!isUltReady) return;
-            processAction('ultimate');
+            if (mode === '3v3' && arenaSkill) processAction('skill', arenaSkill.id);
+            else processAction('ultimate');
         };
 
         return (
@@ -1084,7 +1302,9 @@ const InteractiveBattle = ({ matchData, playerTeam, cpuTeam, mode = '1v1', inven
                     }`}
                 >
                     <span className="text-[11px] font-black text-white uppercase">
-                        {t(`cockfight_ult_${p.elKey}_name`) || (t('cockfight_lowhp_special_label') || 'ESPECIAL')}
+                        {mode === '3v3' && arenaSkill
+                            ? (t(arenaSkill.nameKey) || arenaSkill.id)
+                            : (t(`cockfight_ult_${p.elKey}_name`) || (t('cockfight_lowhp_special_label') || 'ESPECIAL'))}
                     </span>
                     <div className="flex gap-2 mt-1">
                         <span className={`text-[9px] font-bold ${isUltReady ? 'text-yellow-400' : 'text-slate-400'}`}>
@@ -1101,7 +1321,7 @@ const InteractiveBattle = ({ matchData, playerTeam, cpuTeam, mode = '1v1', inven
         const skills = getPlayerSkillList();
         const baseId = skills[0]?.id;
         const abilitySkill = getPrimaryAbilitySkill(skills);
-        const otherSkills = skills.filter(s => s.id !== baseId && s.id !== abilitySkill?.id);
+        const otherSkills = skills.filter(s => s.id !== baseId && s.id !== abilitySkill?.id && !(mode === '3v3' && String(s.id).endsWith('-arena')));
         
         return (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -1138,8 +1358,22 @@ const InteractiveBattle = ({ matchData, playerTeam, cpuTeam, mode = '1v1', inven
 
     return (
         <div className={`relative w-full h-[72dvh] min-h-[480px] max-h-[680px] md:h-[600px] rounded-3xl overflow-hidden flex flex-col border-4 border-slate-800 shadow-2xl ${arenaRootClass}`}>
-            {/* Arena Background */}
-            <div className="absolute inset-0 opacity-20 pointer-events-none bg-gradient-to-b from-transparent to-black" />
+            <div className="rinha-arena-scene" aria-hidden="true">
+                <span className="rinha-arena-floor" />
+                <span className="rinha-arena-drift" />
+                <span className="rinha-arena-mote" />
+                <span className="rinha-arena-mote rinha-arena-mote-b" />
+                <span className="rinha-arena-mote rinha-arena-mote-c" />
+            </div>
+            {arenaPreview && (
+                <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/55 pointer-events-none">
+                    <div className="text-center">
+                        <div className="text-5xl mb-2">{arenaPreview.icon}</div>
+                        <div className="text-white font-black text-xl uppercase tracking-wide">{t(arenaPreview.nameKey) || arenaPreview.name}</div>
+                        <div className="text-yellow-300 text-xs font-black mt-1">+{Math.round((arenaPreview.bonus || 0.25) * 100)}%</div>
+                    </div>
+                </div>
+            )}
             
             {/* Top Bar */}
             <BattleTopBar
@@ -1148,8 +1382,8 @@ const InteractiveBattle = ({ matchData, playerTeam, cpuTeam, mode = '1v1', inven
                 autoLabel={isAuto ? (t('cockfight_auto_on') || 'AUTO ON') : (t('cockfight_auto_off') || 'AUTO OFF')}
                 fxLabel={showFx ? (t('cockfight_fx_on') || 'FX ON') : (t('cockfight_fx_off') || 'FX OFF')}
                 arenaBadgeClass={arenaBadgeClass}
-                arenaIcon={matchData?.arena?.icon}
-                arenaName={t(matchData?.arena?.nameKey) || matchData?.arena?.name}
+                arenaIcon={battleArena?.icon}
+                arenaName={t(battleArena?.nameKey) || battleArena?.name}
                 arenaBonusPct={Math.round(arenaBonus * 100)}
                 isAuto={isAuto}
                 onToggleAuto={() => setIsAuto(!isAuto)}
@@ -1166,12 +1400,13 @@ const InteractiveBattle = ({ matchData, playerTeam, cpuTeam, mode = '1v1', inven
                     showFx,
                     showSkills,
                     showItems,
-                    logs
+                    logs,
+                    liveArena
                 }) : null}
             />
 
             {/* Battle Area */}
-            <div className="flex-1 flex justify-between items-center px-2 sm:px-4 md:px-12 relative z-10 overflow-hidden">
+            <div id="rinha-battle-stage" className="flex-1 flex justify-between items-center px-2 sm:px-4 md:px-12 relative z-10 overflow-hidden">
                 
                 {/* Player Side */}
                 <div className="flex flex-col items-center gap-4 w-[42%] sm:w-1/3 min-w-0">

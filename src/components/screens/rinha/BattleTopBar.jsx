@@ -17,7 +17,7 @@ const BattleTopBar = ({
   fxLabel
 }) => {
   return (
-    <div className="flex flex-col gap-2 p-2 sm:p-4 bg-black/50 backdrop-blur-md z-10">
+    <div className="relative z-20 flex flex-col gap-2 p-2 sm:p-4 bg-black/50 backdrop-blur-md">
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 text-white font-black text-xs sm:text-sm whitespace-nowrap">
           <Swords className="text-red-500 shrink-0" /> {battleTitle}

@@ -521,7 +521,7 @@
   "skill-w10-name": "Cutting Wave",
   "skill-w10-desc": "Strong and fast attack.",
   "skill-w-arena-name": "Deluge",
-  "skill-w-arena-desc": "Ultimate: regenerates and strikes the opponent.",
+  "skill-w-arena-desc": "Ultimate: damage and 30% max HP heal (−30% each use in the fight).",
   "skill-e1-name": "Stone Punch",
   "skill-e1-desc": "Basic earth attack.",
   "skill-e-ability-name": "Rock Impact",
