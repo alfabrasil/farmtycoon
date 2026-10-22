@@ -12,7 +12,13 @@ const CHASE_PVP_HISTORY_KEY = 'farm_chase_pvp_history_v1';
 
 const ChickenChaseScreen = ({ onBack, balance, setBalance, showToast }) => {
   const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState('SOLO'); // 'SOLO' | 'PVP' | 'RINHA'
+  const [activeTab, setActiveTab] = useState(() => {
+    try {
+      const saved = localStorage.getItem('rinha_active_battle_v1');
+      if (saved && JSON.parse(saved)?.matchData) return 'RINHA';
+    } catch (e) {}
+    return 'SOLO';
+  });
   const [showTreasury, setShowTreasury] = useState(false);
   
   // --- STATE: SOLO MODE ---

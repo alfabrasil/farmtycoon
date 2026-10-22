@@ -48,6 +48,23 @@ import robotBattery from '../../../landingpage/characters/Robot_Galinha/addon_ro
 import robotGearsAddon from '../../../landingpage/characters/Robot_Galinha/addon_robot/robot_engrenagens.png';
 import robotShield from '../../../landingpage/characters/Robot_Galinha/addon_robot/robot_escudo.png';
 
+const HERO_BODY = '/assets/sprites/bodies/body_std.svg';
+const HERO_LEGS = '/assets/sprites/legs/legs_std.svg';
+const HERO_WINGS = '/assets/sprites/wings/wings_std.svg';
+const HERO_FACE = '/assets/sprites/eyes/eyes_bio_happy.svg';
+
+function LandingHeroChicken() {
+  return (
+    <div className="lp-hero-chicken relative w-64 md:w-96" role="img" aria-label="Galinha Feliz">
+      <img src={HERO_LEGS} alt="" className="lp-hero-layer" />
+      <img src={HERO_WINGS} alt="" className="lp-hero-layer lp-wing-left" />
+      <img src={HERO_WINGS} alt="" className="lp-hero-layer lp-wing-right" />
+      <img src={HERO_BODY} alt="" className="lp-hero-layer" />
+      <img src={HERO_FACE} alt="" className="lp-hero-layer" />
+    </div>
+  );
+}
+
 const LandingPageScreen = ({ onNavigate }) => {
   const { language, changeLanguage, t } = useLanguage();
   const [showLangMenu, setShowLangMenu] = useState(false);
@@ -157,7 +174,7 @@ const LandingPageScreen = ({ onNavigate }) => {
         </div>
         
         <div className="flex-1 relative flex justify-center z-10">
-          <img src={happy} alt="Galinha Feliz" className="w-64 md:w-96 object-contain drop-shadow-[0_20px_20px_rgba(0,0,0,0.5)] animate-[bounce_4s_infinite]" />
+          <LandingHeroChicken />
         </div>
         
         {/* Background elements */}

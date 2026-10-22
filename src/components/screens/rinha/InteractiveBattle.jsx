@@ -214,7 +214,8 @@ const InteractiveBattle = ({ matchData, playerTeam, cpuTeam, mode = '1v1', inven
 
     // Initialize Teams
     useEffect(() => {
-        if (initialState && !initialAppliedRef.current) return;
+        if (initialAppliedRef.current) return;
+        if (initialState) return;
         const initTeam = (team) => team.map(r => {
             const isArenaMatch = r.element === arenaAdvantage;
             const hpArenaBonus = isArenaMatch ? arenaBonus : 0;
@@ -239,8 +240,9 @@ const InteractiveBattle = ({ matchData, playerTeam, cpuTeam, mode = '1v1', inven
         setPTeam(initTeam(playerTeam));
         setCTeam(initTeam(cpuTeam));
         setGameState('TURN_START');
+        initialAppliedRef.current = true;
         playSound('achievement');
-    }, [playerTeam, cpuTeam, matchData?.arena?.id]);
+    }, []);
 
     useEffect(() => {
         if (!initialState) return;
@@ -1119,12 +1121,18 @@ const InteractiveBattle = ({ matchData, playerTeam, cpuTeam, mode = '1v1', inven
         };
     }, [gameState, isAuto, activePIdx, pTeam]);
 
+    const onStateChangeRef = useRef(onStateChange);
+    onStateChangeRef.current = onStateChange;
+    const latestStateRef = useRef(null);
+    latestStateRef.current = {
+        gameState, pTeam, cTeam, activePIdx, activeCIdx, turnTimer, isAuto, showFx, showSkills, showItems, logs, liveArena
+    };
+
     useEffect(() => {
         return () => {
-            clearInterval(timerRef.current);
-            clearTimeout(cpuTimeoutRef.current);
-            clearTimeout(autoTimeoutRef.current);
-            clearTimeout(stateSyncTimeoutRef.current);
+            const snap = latestStateRef.current;
+            if (!snap || snap.gameState === 'INIT' || !Array.isArray(snap.pTeam) || snap.pTeam.length === 0) return;
+            if (onStateChangeRef.current) onStateChangeRef.current(snap);
         };
     }, []);
 

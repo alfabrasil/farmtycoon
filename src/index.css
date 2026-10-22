@@ -1,3 +1,285 @@
 @import './vfx.css';
 @import './rinhaFx.css';
 @import "tailwindcss";
+
+/* Galinha da capa: mesmas camadas do jogo, asas batendo no ombro. */
+.lp-hero-chicken {
+  aspect-ratio: 384 / 398;
+  filter:
+    drop-shadow(2px 0 0 #111)
+    drop-shadow(-2px 0 0 #111)
+    drop-shadow(0 2px 0 #111)
+    drop-shadow(0 -2px 0 #111)
+    drop-shadow(0 18px 16px rgba(0, 0, 0, 0.45));
+}
+
+.lp-hero-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.chicken-wing-left,
+.lp-wing-left {
+  clip-path: inset(0 50% 0 0);
+  transform-origin: 50% 54%;
+  animation: chicken-flap-left 0.9s ease-in-out infinite;
+}
+
+.chicken-wing-right,
+.lp-wing-right {
+  clip-path: inset(0 0 0 50%);
+  transform-origin: 50% 54%;
+  animation: chicken-flap-right 0.9s ease-in-out infinite;
+}
+
+@keyframes chicken-flap-left {
+  0%, 100% { transform: rotate(6deg); }
+  50% { transform: rotate(-16deg); }
+}
+
+@keyframes chicken-flap-right {
+  0%, 100% { transform: rotate(-6deg); }
+  50% { transform: rotate(16deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chicken-wing-left,
+  .chicken-wing-right,
+  .lp-wing-left,
+  .lp-wing-right {
+    animation: none;
+  }
+}
+
+/* Fazenda de fundo: vento, vida no horizonte e noite discreta. */
+.farm-stars {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 1.2s ease;
+}
+.is-night .farm-stars { opacity: 1; }
+.is-rain .farm-stars { opacity: 0; }
+
+.farm-star {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: #fff;
+  animation: farm-twinkle 4.5s ease-in-out infinite;
+}
+.farm-star.lg { width: 3px; height: 3px; }
+
+.farm-cloud {
+  position: absolute;
+  height: 28px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  animation: farm-drift 96s linear infinite;
+}
+.farm-cloud::before,
+.farm-cloud::after {
+  content: "";
+  position: absolute;
+  background: inherit;
+  border-radius: inherit;
+}
+.farm-cloud::before { width: 46%; height: 160%; left: 16%; bottom: 20%; }
+.farm-cloud::after { width: 34%; height: 130%; right: 18%; bottom: 10%; }
+.farm-cloud-a { width: 110px; top: 8%; animation-delay: -8s; }
+.farm-cloud-b { width: 78px; top: 18%; height: 22px; opacity: 0.72; animation-delay: -40s; }
+.farm-cloud-c { width: 64px; top: 12%; height: 20px; opacity: 0.6; animation-delay: -72s; }
+.is-night .farm-cloud { background: rgba(148, 163, 184, 0.35); }
+.is-rain .farm-cloud { background: rgba(100, 116, 139, 0.72); }
+
+.farm-drop {
+  position: absolute;
+  top: 4%;
+  width: 1px;
+  height: 12px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.45);
+  opacity: 0;
+}
+.is-rain .farm-drop { animation: farm-rain 2.4s linear infinite; }
+
+.farm-hill { overflow: visible; }
+.farm-blade {
+  position: absolute;
+  top: 28px;
+  width: 10px;
+  height: 18px;
+  background: #4ade80;
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  transform-origin: bottom center;
+  animation: farm-sway 3.2s ease-in-out infinite;
+}
+.is-night .farm-blade { background: #166534; }
+
+.farm-stage {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 27%;
+  height: 78px;
+  z-index: 1;
+}
+.is-night .farm-tree,
+.is-night .farm-crops,
+.is-night .farm-flowers,
+.is-night .farm-house { filter: brightness(0.55); }
+
+.farm-day-life { opacity: 1; transition: opacity 1s ease; }
+.is-night .farm-day-life { opacity: 0; }
+.farm-night-life { opacity: 0; transition: opacity 1.2s ease; }
+.is-night .farm-night-life { opacity: 1; }
+
+.farm-tree { position: absolute; bottom: 0; transform-origin: 50% 100%; animation: farm-sway 5.5s ease-in-out infinite; }
+.farm-tree-l { left: 3%; }
+.farm-tree-r { right: 4%; animation-delay: -2s; }
+
+.farm-crops { position: absolute; left: 14%; bottom: 0; }
+.farm-stalk {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: farm-sway 2.6s ease-in-out infinite;
+}
+
+.farm-cow-near { position: absolute; left: 24%; bottom: 0; z-index: 2; }
+.farm-cow-near .farm-cow-head { animation-delay: -2.2s; }
+
+.farm-dog { position: absolute; left: 38%; bottom: 0; animation: farm-trot 11s ease-in-out infinite; }
+.farm-tail { transform-box: fill-box; transform-origin: right center; animation: farm-wag 0.35s ease-in-out infinite; }
+
+.farm-hen { position: absolute; bottom: 0; transform-origin: 50% 100%; animation: farm-peck 2.8s ease-in-out infinite; }
+.farm-hen-a { left: 48%; }
+.farm-hen-b { left: 54%; animation-delay: -1.2s; }
+.farm-hen-wing { transform-box: fill-box; transform-origin: left center; animation: farm-flutter 0.7s ease-in-out infinite; }
+
+.farm-cow { position: absolute; left: 63%; bottom: 0; }
+.farm-cow-head { transform-box: fill-box; transform-origin: left center; animation: farm-graze 5s ease-in-out infinite; }
+.farm-cow-tail { transform-box: fill-box; transform-origin: top center; animation: farm-sway 1.8s ease-in-out infinite; }
+
+.farm-flowers { position: absolute; right: 19%; bottom: 0; z-index: 4; }
+.farm-flower { transform-box: fill-box; transform-origin: center bottom; animation: farm-sway 3.4s ease-in-out infinite; }
+
+.farm-house { position: absolute; right: 14%; bottom: 0; }
+.farm-window { fill: #93c5fd; }
+.is-night .farm-window { fill: #fde68a; filter: brightness(3) drop-shadow(0 0 6px #fbbf24); }
+
+.farm-owl { position: absolute; bottom: 36px; z-index: 5; }
+.farm-owl-l { left: 2.4%; }
+.farm-owl-r { right: 3.2%; }
+.farm-owl-eye { transform-box: fill-box; transform-origin: center; animation: farm-blink 5.2s ease-in-out infinite; }
+.farm-owl-r .farm-owl-eye { animation-delay: -2.4s; }
+
+.farm-fox { position: absolute; left: 46%; bottom: 0; z-index: 4; animation: farm-prowl 24s ease-in-out infinite; }
+.farm-fox-sit { left: 28%; width: 42px; animation: none; }
+.farm-fox-tail { transform-box: fill-box; transform-origin: right center; animation: farm-wag 1.6s ease-in-out infinite; }
+
+.farm-firefly {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  border-radius: 50%;
+  background: #fef08a;
+  box-shadow: 0 0 8px 3px rgba(250, 204, 21, 0.9);
+  animation: farm-firefly 6s ease-in-out infinite;
+}
+
+.farm-tractor { position: absolute; left: 0; bottom: -20px; z-index: 6; animation: farm-drive 52s linear infinite; }
+.farm-dog, .farm-hen, .farm-cow, .farm-crops { z-index: 2; }
+.farm-house, .farm-tree { z-index: 3; }
+.farm-wheel { transform-box: fill-box; transform-origin: center; animation: farm-spin 1.5s linear infinite; }
+.farm-headlight { opacity: 0; }
+.is-night .farm-headlight { opacity: 1; }
+
+.farm-emoji { animation: farm-bob 6s ease-in-out infinite; }
+
+@keyframes farm-drift {
+  0% { transform: translateX(-30vw); }
+  100% { transform: translateX(120vw); }
+}
+@keyframes farm-twinkle {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 1; }
+}
+@keyframes farm-sway {
+  0%, 100% { transform: rotate(-3deg); }
+  50% { transform: rotate(5deg); }
+}
+@keyframes farm-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+@keyframes farm-trot {
+  0%, 100% { transform: translateX(0) scaleX(-1); }
+  46% { transform: translateX(80px) scaleX(-1); }
+  54% { transform: translateX(80px) scaleX(1); }
+  96% { transform: translateX(0) scaleX(1); }
+}
+@keyframes farm-wag {
+  0%, 100% { transform: rotate(-18deg); }
+  50% { transform: rotate(22deg); }
+}
+@keyframes farm-peck {
+  0%, 62%, 100% { transform: rotate(0deg); }
+  74% { transform: rotate(14deg); }
+  84% { transform: rotate(0deg); }
+  92% { transform: rotate(10deg); }
+}
+@keyframes farm-flutter {
+  0%, 100% { transform: rotate(10deg); }
+  50% { transform: rotate(-22deg); }
+}
+@keyframes farm-graze {
+  0%, 55%, 100% { transform: rotate(0deg); }
+  72% { transform: rotate(18deg); }
+}
+@keyframes farm-drive {
+  0% { transform: translateX(-18vw); }
+  100% { transform: translateX(112vw); }
+}
+@keyframes farm-spin { to { transform: rotate(360deg); } }
+@keyframes farm-blink {
+  0%, 40%, 48%, 100% { transform: scaleY(1); }
+  44% { transform: scaleY(0.12); }
+}
+@keyframes farm-prowl {
+  0%, 100% { transform: translateX(0) scaleX(1); }
+  46% { transform: translateX(78px) scaleX(1); }
+  54% { transform: translateX(78px) scaleX(-1); }
+  96% { transform: translateX(0) scaleX(-1); }
+}
+@keyframes farm-firefly {
+  0%, 100% { opacity: 0.15; transform: translate(0, 0); }
+  35% { opacity: 1; transform: translate(10px, -12px); }
+  70% { opacity: 0.25; transform: translate(-8px, -4px); }
+}
+@keyframes farm-rain {
+  0% { transform: translateY(-16px); opacity: 0; }
+  15% { opacity: 0.35; }
+  100% { transform: translateY(32vh); opacity: 0; }
+}
+
+@media (max-width: 639px) {
+  .farm-dog, .farm-cow, .farm-hen-b, .farm-tree-r, .farm-owl-r, .farm-fox-sit { display: none; }
+  .farm-house { right: 8%; }
+  .farm-flowers { right: 16%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .farm-cloud, .farm-star, .farm-drop, .farm-blade, .farm-tree,
+  .farm-stalk, .farm-flower, .farm-dog, .farm-tail,
+  .farm-hen, .farm-hen-wing, .farm-cow-head, .farm-cow-tail,
+  .farm-tractor, .farm-wheel, .farm-emoji,
+  .farm-owl-eye, .farm-fox, .farm-fox-tail, .farm-firefly {
+    animation: none;
+  }
+}

@@ -11,9 +11,23 @@ import RoosterCycler from '../ui/RoosterCycler';
 import ChiIcon from '../ui/ChiIcon';
 import { appendTreasuryLedgerEntry, computePvPFeeSplit } from '../../utils/treasuryLedger';
 
+const ACTIVE_BATTLE_KEY = 'rinha_active_battle_v1';
+
+const readActiveBattle = () => {
+  try {
+    const saved = localStorage.getItem(ACTIVE_BATTLE_KEY);
+    const parsed = saved ? JSON.parse(saved) : null;
+    if (!parsed?.matchData) return null;
+    return parsed;
+  } catch (e) {
+    return null;
+  }
+};
+
 const CockfightScreen = ({ onBack, balance, setBalance, showToast }) => {
   const { t } = useLanguage();
-  const ACTIVE_BATTLE_KEY = 'rinha_active_battle_v1';
+  const savedOnLoadRef = useRef(readActiveBattle());
+  const savedOnLoad = savedOnLoadRef.current;
   const [rooster, setRooster] = useState(() => {
     try {
       const saved = localStorage.getItem('farm_rooster');
@@ -24,23 +38,18 @@ const CockfightScreen = ({ onBack, balance, setBalance, showToast }) => {
     }
   });
 
-  const [gameState, setGameState] = useState('MENU'); // MENU, SELECTING_ROOSTER, TEAM_3V3, SHOP, BATTLING, RESULT, HISTORY
+  const [gameState, setGameState] = useState(savedOnLoad ? 'BATTLING' : 'MENU');
   const [selectedElement, setSelectedElement] = useState('FOGO');
   const [selectedColor, setSelectedColor] = useState('VERMELHO');
-  const [bet, setBet] = useState(10);
-  const [battleMode, setBattleMode] = useState('1v1');
+  const [bet, setBet] = useState(savedOnLoad?.bet || 10);
+  const [battleMode, setBattleMode] = useState(savedOnLoad?.battleMode || '1v1');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [matchResult, setMatchResult] = useState(null);
+  const [matchResult, setMatchResult] = useState(savedOnLoad?.matchData || null);
   const [history, setHistory] = useState([]);
-  const [activeBattle, setActiveBattle] = useState(() => {
-    try {
-      const saved = localStorage.getItem('rinha_active_battle_v1');
-      return saved ? JSON.parse(saved) : null;
-    } catch (e) {
-      return null;
-    }
-  });
-  const battleStateRef = useRef(null);
+  const [activeBattle, setActiveBattle] = useState(savedOnLoad);
+  const battleStateRef = useRef(savedOnLoad?.battleState || null);
+  const battleOpenRef = useRef(Boolean(savedOnLoad?.matchData));
+  const snapshotRef = useRef({});
   const [team3v3, setTeam3v3] = useState(() => {
     try {
       const saved = localStorage.getItem('rinha_team_3v3');
@@ -119,31 +128,55 @@ const CockfightScreen = ({ onBack, balance, setBalance, showToast }) => {
     loadHistory();
   }, []);
 
-  const persistActiveBattle = (battleState) => {
-    if (!battleState || !matchResult) return;
+  snapshotRef.current = {
+    matchData: matchResult,
+    bet,
+    battleMode,
+    team3v3,
+    rooster,
+    inventory
+  };
+
+  const writeActiveBattle = (battleState, snap, publish = false) => {
+    if (!battleOpenRef.current) return;
+    const source = snap || snapshotRef.current;
+    if (!source?.matchData) return;
+    const state = battleState === undefined ? battleStateRef.current : battleState;
+    if (state && (!Array.isArray(state.pTeam) || state.pTeam.length === 0)) return;
     const payload = {
-      matchData: matchResult,
-      bet,
-      battleMode,
-      team3v3,
-      rooster,
-      inventory,
-      battleState,
+      matchData: source.matchData,
+      bet: source.bet,
+      battleMode: source.battleMode,
+      team3v3: source.team3v3,
+      rooster: source.rooster,
+      inventory: source.inventory,
+      battleState: state || null,
       savedAt: Date.now()
     };
-    setActiveBattle(payload);
+    if (state) battleStateRef.current = state;
+    if (publish) setActiveBattle(payload);
     try {
       localStorage.setItem(ACTIVE_BATTLE_KEY, JSON.stringify(payload));
     } catch (e) {}
   };
 
   const clearActiveBattle = () => {
+    battleOpenRef.current = false;
     setActiveBattle(null);
     battleStateRef.current = null;
     try {
       localStorage.removeItem(ACTIVE_BATTLE_KEY);
     } catch (e) {}
   };
+
+  useEffect(() => {
+    const flush = () => writeActiveBattle(battleStateRef.current);
+    window.addEventListener('pagehide', flush);
+    return () => {
+      window.removeEventListener('pagehide', flush);
+      flush();
+    };
+  }, []);
 
   const loadHistory = async () => {
     const data = await RinhaEngine.getHistory(20);
@@ -188,8 +221,7 @@ const CockfightScreen = ({ onBack, balance, setBalance, showToast }) => {
     setIsProcessing(true);
     try {
       clearActiveBattle();
-      // Setup Initial Match Data for Interactive Battle
-      // We deduct the bet immediately
+      battleOpenRef.current = true;
       setBalance(prev => prev - bet);
       const split = computePvPFeeSplit(bet, 2);
       appendTreasuryLedgerEntry({
@@ -205,19 +237,33 @@ const CockfightScreen = ({ onBack, balance, setBalance, showToast }) => {
       const elements = Object.keys(RINHA_CONFIG.ELEMENTS);
       const colors = Object.keys(RINHA_CONFIG.COLORS);
       const arena = RINHA_CONFIG.ARENAS[Math.floor(Math.random() * RINHA_CONFIG.ARENAS.length)];
-      
-      const cpuRooster = {
+      const level = rooster.level || 1;
+      const rollRooster = (id) => ({
+        id,
         element: elements[Math.floor(Math.random() * elements.length)],
         color: colors[Math.floor(Math.random() * colors.length)],
-        level: rooster.level || 1
-      };
+        level
+      });
+      const cpuTeam = battleMode === '3v3'
+        ? [rollRooster('c1'), rollRooster('c2'), rollRooster('c3')]
+        : [rollRooster('c1')];
+      const playerTeam = battleMode === '3v3'
+        ? (team3v3 || []).map((r, i) => ({ ...r, id: `p${i + 1}`, level }))
+        : [{ ...rooster, id: 'p1', level }];
 
       const matchData = {
         arena,
-        cpu: cpuRooster,
-        betAmount: bet
+        cpu: cpuTeam[0],
+        cpuTeam,
+        playerTeam,
+        betAmount: bet,
+        mode: battleMode
       };
-      
+
+      const snap = { matchData, bet, battleMode, team3v3, rooster, inventory };
+      snapshotRef.current = snap;
+      battleStateRef.current = null;
+      writeActiveBattle(null, snap, true);
       setMatchResult(matchData);
       setGameState('BATTLING');
       playSound('game_start');
@@ -304,9 +350,7 @@ const CockfightScreen = ({ onBack, balance, setBalance, showToast }) => {
   };
 
   const handleBack = () => {
-    if (gameState === 'BATTLING' && matchResult && battleStateRef.current) {
-      persistActiveBattle(battleStateRef.current);
-    }
+    if (gameState === 'BATTLING') writeActiveBattle(battleStateRef.current);
     onBack();
   };
 
@@ -833,23 +877,20 @@ const CockfightScreen = ({ onBack, balance, setBalance, showToast }) => {
                 <InteractiveBattle 
                   matchData={matchResult} 
                   initialState={activeBattle?.battleState}
-                  onStateChange={(s) => { battleStateRef.current = s; }}
+                  onStateChange={(s) => { writeActiveBattle(s); }}
                   onExit={(s) => {
-                    battleStateRef.current = s;
-                    persistActiveBattle(s);
+                    writeActiveBattle(s, null, true);
                     setGameState('MENU');
                   }}
                   playerTeam={
+                    Array.isArray(matchResult.playerTeam) ? matchResult.playerTeam :
                     battleMode === '3v3'
                       ? (team3v3 || []).map((r, i) => ({ ...r, id: `p${i + 1}`, level: rooster.level || 1 }))
                       : [{ ...rooster, id: 'p1' }]
                   } 
                   cpuTeam={
-                    battleMode === '3v3' ? [
-                      {...matchResult.cpu, id: 'c1'},
-                      {element: Object.keys(RINHA_CONFIG.ELEMENTS)[Math.floor(Math.random()*4)], color: Object.keys(RINHA_CONFIG.COLORS)[Math.floor(Math.random()*4)], level: rooster.level, id: 'c2'},
-                      {element: Object.keys(RINHA_CONFIG.ELEMENTS)[Math.floor(Math.random()*4)], color: Object.keys(RINHA_CONFIG.COLORS)[Math.floor(Math.random()*4)], level: rooster.level, id: 'c3'}
-                    ] : [{...matchResult.cpu, id: 'c1'}]
+                    Array.isArray(matchResult.cpuTeam) ? matchResult.cpuTeam :
+                    [{ ...matchResult.cpu, id: 'c1' }]
                   }
                   mode={battleMode}
                   inventory={inventory}

@@ -57,13 +57,20 @@ const ChickenVisual = ({ chicken, dayCount, overrideStatus = null, className = '
         />
       )}
 
-      {/* 2. WINGS (Z-15) */}
+      {/* 2. WINGS (Z-15): cada lado gira no ombro */}
       {assets.wings && (
-        <img 
-          src={assets.wings} 
-          alt="wings" 
-          className="absolute inset-0 w-full h-full object-contain z-15" 
-        />
+        <>
+          <img
+            src={assets.wings}
+            alt=""
+            className="chicken-wing-left absolute inset-0 w-full h-full object-contain z-15"
+          />
+          <img
+            src={assets.wings}
+            alt=""
+            className="chicken-wing-right absolute inset-0 w-full h-full object-contain z-15"
+          />
+        </>
       )}
 
       {/* 3. BODY (Z-20) */}
